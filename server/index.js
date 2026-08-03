@@ -10,7 +10,29 @@ const store = require('./store');
 const { defaultQuestions, defaultSettings, practicePuzzle } = require('./defaultQuiz');
 
 const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
+const DEFAULT_PASSWORD = 'admin1234';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
+
+// 인터넷에 공개 배포할 때 기본 비밀번호를 그대로 쓰면 누구나 /admin 에 들어와
+// 진행을 가로챌 수 있으므로 아예 실행을 막는다. (집 안 와이파이용 로컬 실행은 그대로 허용)
+if (IS_PRODUCTION && ADMIN_PASSWORD === DEFAULT_PASSWORD) {
+  console.error(
+    [
+      '',
+      '❌ 관리자 비밀번호를 설정해야 배포할 수 있습니다.',
+      '',
+      '   기본 비밀번호(admin1234)는 공개된 값이라, 그대로 두면',
+      '   누구나 /admin 에 접속해 퀴즈 진행을 가로챌 수 있습니다.',
+      '',
+      '   호스팅 서비스의 환경변수(Environment Variables)에',
+      '   ADMIN_PASSWORD = <직접 정한 비밀번호>',
+      '   를 추가한 뒤 다시 배포해 주세요.',
+      '',
+    ].join('\n')
+  );
+  process.exit(1);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -929,12 +951,22 @@ server.listen(PORT, '0.0.0.0', () => {
       if (net.family === 'IPv4' && !net.internal) addrs.push(net.address);
     }
   }
-  console.log('\n🎉  Quiz-Quiz 서버가 켜졌습니다!\n');
+  console.log('\n🎉  Quiz-Quiz 서버가 켜졌습니다!  (포트 %d)\n', PORT);
+  if (IS_PRODUCTION) {
+    // 배포 환경에서는 로그에 비밀번호를 남기지 않는다.
+    console.log('  배포 모드로 실행 중입니다. 참가자는 /, 진행자는 /admin 으로 접속하세요.');
+    console.log('  관리자 비밀번호 : 환경변수 ADMIN_PASSWORD 에 설정한 값\n');
+    return;
+  }
   console.log('  참가자(휴대폰) : http://localhost:%d', PORT);
   addrs.forEach((a) => console.log('                   http://%s:%d', a, PORT));
   console.log('  진행자(노트북) : http://localhost:%d/admin', PORT);
   addrs.forEach((a) => console.log('                   http://%s:%d/admin', a, PORT));
-  console.log('  관리자 비밀번호 : %s  (환경변수 ADMIN_PASSWORD 로 변경)\n', ADMIN_PASSWORD);
+  console.log('  관리자 비밀번호 : %s', ADMIN_PASSWORD);
+  if (ADMIN_PASSWORD === DEFAULT_PASSWORD) {
+    console.log('  ⚠️  기본 비밀번호입니다. 인터넷에 배포할 때는 ADMIN_PASSWORD 를 꼭 바꿔주세요.');
+  }
+  console.log('');
 });
 
 process.on('SIGINT', () => {
