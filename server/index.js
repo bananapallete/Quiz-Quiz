@@ -39,8 +39,17 @@ const server = http.createServer(app);
 // 문제/보기 이미지와 음성 파일을 base64 로 담아 보낼 수 있도록 기본 1MB 제한을 늘려둔다.
 const io = new Server(server, { cors: { origin: '*' }, maxHttpBufferSize: 32 * 1024 * 1024 });
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(
+  express.static(path.join(__dirname, '..', 'public'), {
+    setHeaders: (res, filePath) => {
+      // HTML 은 항상 서버에 물어보게 해서, 수정 후 새로고침하면 바로 반영되게 한다.
+      // (css/js 는 주소 뒤 ?v= 값이 바뀌면 새로 받아간다)
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  })
+);
 app.get('/admin', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
 });
 app.get('/health', (req, res) => res.json({ ok: true }));

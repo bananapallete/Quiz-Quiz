@@ -145,6 +145,56 @@
     };
   }
 
+  /**
+   * 화면 확대(줌) 차단.
+   *
+   * CSS 의 touch-action: manipulation 은 "더블탭 확대"만 막고,
+   * viewport 의 user-scalable=no 는 iOS 사파리가 무시한다.
+   * 그래서 iOS 전용 제스처 이벤트와 더블탭을 직접 막아준다.
+   */
+  function blockZoom() {
+    // 1) iOS 사파리의 손가락 두 개 확대 (pinch)
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
+      document.addEventListener(
+        ev,
+        function (e) {
+          e.preventDefault();
+        },
+        { passive: false }
+      );
+    });
+
+    // 2) 두 손가락으로 시작하는 터치도 차단
+    document.addEventListener(
+      'touchstart',
+      function (e) {
+        if (e.touches && e.touches.length > 1) e.preventDefault();
+      },
+      { passive: false }
+    );
+
+    // 3) 더블탭 확대.
+    //    버튼·입력칸 위에서는 preventDefault 를 하면 클릭까지 사라지므로 건드리지 않는다.
+    //    (그런 요소들은 touch-action: manipulation 으로 이미 확대가 막혀 있다)
+    const TAPPABLE =
+      'button, a, input, textarea, select, label, .tile, .opt, .pcard, .numkey, .emote-btn, .wheel, .wheel-item, .tab, .rank-row';
+    let lastTouchEnd = 0;
+    document.addEventListener(
+      'touchend',
+      function (e) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 350) {
+          const t = e.target;
+          const interactive = t && t.closest && t.closest(TAPPABLE);
+          if (!interactive) e.preventDefault();
+        }
+        lastTouchEnd = now;
+      },
+      { passive: false }
+    );
+  }
+  blockZoom();
+
   const PAIR_COLORS = [
     '#7c5cff',
     '#ff4d8d',
