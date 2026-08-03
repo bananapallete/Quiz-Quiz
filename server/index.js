@@ -36,7 +36,8 @@ if (IS_PRODUCTION && ADMIN_PASSWORD === DEFAULT_PASSWORD) {
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+// 문제/보기 이미지를 base64 로 담아 보낼 수 있도록 기본 1MB 제한을 늘려둔다.
+const io = new Server(server, { cors: { origin: '*' }, maxHttpBufferSize: 10 * 1024 * 1024 });
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/admin', (req, res) => {
@@ -125,10 +126,11 @@ function normalizeQuestions(list) {
       subtitle: q.subtitle != null ? q.subtitle : base.subtitle,
       type: ['choice', 'short', 'puzzle'].includes(q.type) ? q.type : 'choice',
       text: q.text || '',
+      image: clampImage(q.image),
       timeLimit: clampInt(q.timeLimit, 5, 600, 30),
       hint: q.hint || '',
       doublePoints: !!q.doublePoints,
-      options: Array.isArray(q.options) ? q.options.slice(0, 6) : ['', '', '', ''],
+      options: normalizeOptions(q.options),
       answerIndex: clampInt(q.answerIndex, 0, 5, 0),
       answers: Array.isArray(q.answers) ? q.answers : [],
       pairs: Array.isArray(q.pairs) ? q.pairs.filter((p) => p && (p.left || p.right)) : [],
@@ -141,6 +143,27 @@ function clampInt(v, min, max, fallback) {
   const n = parseInt(v, 10);
   if (Number.isNaN(n)) return fallback;
   return Math.min(max, Math.max(min, n));
+}
+
+// 업로드 이미지는 base64 데이터 URL 로 저장한다. 압축한 사진 몇 장 정도를 넉넉히
+// 허용하되, 이상하게 큰 값이 상태 파일에 쌓이는 것은 막아둔다.
+const MAX_IMAGE_CHARS = 3_000_000;
+
+function clampImage(v) {
+  if (typeof v !== 'string') return '';
+  const s = v.trim();
+  if (!s || s.length > MAX_IMAGE_CHARS) return '';
+  return s;
+}
+
+/** 보기(options)를 {text, image} 형태로 통일한다. 예전 버전(문자열 배열)도 그대로 읽을 수 있게 둔다. */
+function normalizeOptions(options) {
+  if (!Array.isArray(options)) return ['', '', '', ''].map((t) => ({ text: t, image: '' }));
+  return options.slice(0, 6).map((o) =>
+    typeof o === 'string'
+      ? { text: o.slice(0, 120), image: '' }
+      : { text: String((o && o.text) || '').slice(0, 120), image: clampImage(o && o.image) }
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -213,11 +236,16 @@ function publicQuestion(q, round) {
     subtitle: q.subtitle,
     type: q.type,
     text: q.text,
+    image: q.image || '',
     timeLimit: round.timeLimit,
     doublePoints: round.doublePoints,
   };
   if (q.type === 'choice') {
-    base.options = q.options.filter((o) => String(o).trim() !== '');
+    // 렌더링 순서가 아니라 원래 보기 번호(i)를 같이 보내야, 빈 보기를 건너뛰어도
+    // 제출값이 서버가 저장한 answerIndex 와 정확히 맞는다.
+    base.options = q.options
+      .map((o, i) => ({ i, text: o.text, image: o.image || '' }))
+      .filter((o) => String(o.text).trim() !== '');
   } else if (q.type === 'puzzle') {
     base.lefts = q.pairs.map((p, i) => ({ i, text: p.left }));
     base.rights = round.rightOrder.map((i) => ({ i, text: q.pairs[i].right }));
@@ -226,7 +254,7 @@ function publicQuestion(q, round) {
 }
 
 function correctAnswerText(q) {
-  if (q.type === 'choice') return q.options[q.answerIndex] || '';
+  if (q.type === 'choice') return (q.options[q.answerIndex] && q.options[q.answerIndex].text) || '';
   if (q.type === 'short') return (q.answers || []).join(' / ');
   if (q.type === 'puzzle') return q.pairs.map((p) => `${p.left} → ${p.right}`).join(', ');
   return '';
@@ -300,6 +328,7 @@ function activeRoundPayload(player) {
       subtitle: q.subtitle,
       type: q.type,
       text: q.text,
+      image: q.image || '',
       correctAnswer: correctAnswerText(q),
       doublePoints: round.doublePoints,
       results: round.results,
@@ -359,7 +388,7 @@ function startCountdown(questionId) {
   if (state.phase === 'countdown' || state.phase === 'question') {
     return { ok: false, error: '이미 진행 중인 문제가 있습니다.' };
   }
-  if (q.type === 'choice' && q.options.filter((o) => String(o).trim()).length < 2) {
+  if (q.type === 'choice' && q.options.filter((o) => o && String(o.text).trim()).length < 2) {
     return { ok: false, error: '객관식 보기를 2개 이상 입력해 주세요.' };
   }
   if (q.type === 'short' && (!q.answers || !q.answers.length)) {
@@ -543,6 +572,7 @@ function endRound(reason) {
     subtitle: q ? q.subtitle : '',
     type: q ? q.type : '',
     text: q ? q.text : '',
+    image: q ? q.image || '' : '',
     correctAnswer: q ? correctAnswerText(q) : '',
     doublePoints: round.doublePoints,
     reason: reason || '',
@@ -751,12 +781,11 @@ io.on('connection', (socket) => {
     q.subtitle = String(incoming.subtitle || '').slice(0, 60);
     q.type = ['choice', 'short', 'puzzle'].includes(incoming.type) ? incoming.type : q.type;
     q.text = String(incoming.text || '').slice(0, 500);
+    q.image = clampImage(incoming.image);
     q.timeLimit = clampInt(incoming.timeLimit, 5, 600, q.timeLimit);
     q.hint = String(incoming.hint || '').slice(0, 300);
     q.doublePoints = !!incoming.doublePoints;
-    q.options = Array.isArray(incoming.options)
-      ? incoming.options.slice(0, 6).map((o) => String(o).slice(0, 120))
-      : q.options;
+    q.options = Array.isArray(incoming.options) ? normalizeOptions(incoming.options) : q.options;
     q.answerIndex = clampInt(incoming.answerIndex, 0, Math.max(0, q.options.length - 1), 0);
     q.answers = Array.isArray(incoming.answers)
       ? incoming.answers.map((a) => String(a).slice(0, 120)).filter((a) => a.trim() !== '')

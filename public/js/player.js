@@ -315,6 +315,13 @@
     typeBadge.className = typeBadgeClass(question.type);
     $('#q-x2').classList.toggle('hidden', !question.doublePoints);
     $('#q-text').textContent = question.text || '';
+    const qImgWrap = $('#q-image-wrap');
+    if (question.image) {
+      $('#q-image').src = question.image;
+      qImgWrap.classList.remove('hidden');
+    } else {
+      qImgWrap.classList.add('hidden');
+    }
     $('#hint-box').classList.add('hidden');
     $('#hint-box').textContent = '';
 
@@ -323,17 +330,26 @@
 
     if (question.type === 'choice') {
       const list = el('div', 'options');
-      (question.options || []).forEach(function (opt, i) {
+      (question.options || []).forEach(function (opt, order) {
         const b = el('button', 'opt');
         b.type = 'button';
-        b.appendChild(el('span', 'k', String(i + 1)));
-        b.appendChild(el('span', null, opt));
+        if (opt.image) {
+          const img = el('img', 'opt-img');
+          img.src = opt.image;
+          img.alt = '';
+          b.appendChild(img);
+        }
+        const row = el('div', 'opt-row');
+        row.appendChild(el('span', 'k', String(order + 1)));
+        row.appendChild(el('span', null, opt.text));
+        b.appendChild(row);
         b.addEventListener('click', function () {
           if (S.submitted) return;
-          S.answer = i;
-          Array.prototype.forEach.call(list.children, function (c, ci) {
-            c.classList.toggle('selected', ci === i);
+          S.answer = opt.i;
+          Array.prototype.forEach.call(list.children, function (c) {
+            c.classList.remove('selected');
           });
+          b.classList.add('selected');
           vibrate(10);
         });
         list.appendChild(b);
@@ -477,6 +493,14 @@
     S.lastResult = data;
     showOverlay('overlay-count', false);
     showScreen('result');
+
+    const rImgWrap = $('#r-image-wrap');
+    if (data.image) {
+      $('#r-image').src = data.image;
+      rImgWrap.classList.remove('hidden');
+    } else {
+      rImgWrap.classList.add('hidden');
+    }
 
     const mine = S.me
       ? (data.results || []).find(function (r) {

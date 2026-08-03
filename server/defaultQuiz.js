@@ -11,7 +11,7 @@
  */
 
 function q(index, title, subtitle, extra) {
-  return Object.assign(
+  const merged = Object.assign(
     {
       id: 'q' + (index + 1),
       index,
@@ -19,6 +19,7 @@ function q(index, title, subtitle, extra) {
       subtitle,
       type: 'choice',
       text: '',
+      image: '',
       timeLimit: 30,
       hint: '',
       doublePoints: false,
@@ -29,6 +30,11 @@ function q(index, title, subtitle, extra) {
     },
     extra
   );
+  // 보기는 여기서는 문자열로 짧게 적고, 실제로는 {text, image} 형태로 통일해서 내보낸다.
+  merged.options = merged.options.map((o) =>
+    typeof o === 'string' ? { text: o, image: '' } : { text: (o && o.text) || '', image: (o && o.image) || '' }
+  );
+  return merged;
 }
 
 const defaultQuestions = [

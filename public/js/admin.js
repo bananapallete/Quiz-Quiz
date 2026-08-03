@@ -39,6 +39,110 @@
     if (e.key === 'Enter') authenticate($('#pw').value);
   });
 
+  /* ---------------- 이미지 업로드 ---------------- */
+
+  /** 사진을 캔버스로 리사이즈·압축해 data URL 문자열로 반환한다. */
+  function compressImageFile(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !file.type || file.type.indexOf('image/') !== 0) {
+        reject(new Error('이미지 파일만 선택할 수 있어요.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = function () {
+        reject(new Error('파일을 읽지 못했어요.'));
+      };
+      reader.onload = function () {
+        const img = new Image();
+        img.onerror = function () {
+          reject(new Error('이미지를 불러오지 못했어요.'));
+        };
+        img.onload = function () {
+          let w = img.width;
+          let h = img.height;
+          const scale = Math.min(1, maxDim / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale));
+          h = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * 이미지 업로드 위젯 하나를 만든다. 값은 hidden input(data-f) 에 저장되므로
+   * 기존 collect() 의 val() 로 똑같이 읽을 수 있다.
+   */
+  function buildImageField(dataF, initialValue) {
+    const wrap = el('div');
+    wrap.style.cssText = 'margin-bottom:10px';
+
+    const hidden = el('input');
+    hidden.type = 'hidden';
+    hidden.dataset.f = dataF;
+    hidden.value = initialValue || '';
+
+    const preview = el('img');
+    preview.style.cssText =
+      'max-width:220px;max-height:130px;border-radius:10px;display:none;margin-bottom:6px;border:1px solid var(--border);object-fit:cover';
+
+    const row = el('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+
+    const fileInput = el('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.cssText = 'max-width:190px;font-size:12px';
+
+    const clearBtn = el('button', 'btn ghost small', '이미지 삭제');
+    clearBtn.type = 'button';
+
+    function refresh() {
+      if (hidden.value) {
+        preview.src = hidden.value;
+        preview.style.display = 'block';
+        clearBtn.style.display = 'inline-flex';
+      } else {
+        preview.style.display = 'none';
+        preview.src = '';
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    fileInput.addEventListener('change', function () {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (!file) return;
+      compressImageFile(file, 900, 0.72)
+        .then(function (dataUrl) {
+          hidden.value = dataUrl;
+          refresh();
+        })
+        .catch(function (err) {
+          toast((err && err.message) || '이미지를 불러오지 못했어요.', 'err');
+        });
+    });
+    clearBtn.addEventListener('click', function () {
+      hidden.value = '';
+      refresh();
+    });
+
+    row.appendChild(fileInput);
+    row.appendChild(clearBtn);
+    wrap.appendChild(hidden);
+    wrap.appendChild(preview);
+    wrap.appendChild(row);
+    refresh();
+    return wrap;
+  }
+
   /* ---------------- 탭 ---------------- */
 
   $$('.tab').forEach(function (tab) {
@@ -82,6 +186,13 @@
       meta.appendChild(tb);
       if (q.doublePoints) meta.appendChild(el('span', 'badge x2', '2배'));
       if (q.played) meta.appendChild(el('span', 'badge', '출제됨'));
+      const full = (state.questions || []).find(function (x) {
+        return x.id === q.id;
+      });
+      const hasImage = full && (full.image || (full.options || []).some(function (o) {
+        return o && o.image;
+      }));
+      if (hasImage) meta.appendChild(el('span', 'badge', '🖼'));
       meta.appendChild(el('span', 'a-hearts', '💗 ' + (q.hearts || 0)));
       tile.appendChild(meta);
 
@@ -176,7 +287,7 @@
   }
 
   function answerText(q) {
-    if (q.type === 'choice') return q.options[q.answerIndex] || '(미설정)';
+    if (q.type === 'choice') return (q.options[q.answerIndex] && q.options[q.answerIndex].text) || '(미설정)';
     if (q.type === 'short') return (q.answers || []).join(' / ') || '(미설정)';
     if (q.type === 'puzzle')
       return q.pairs
@@ -269,14 +380,24 @@
     details.id = 'ed-' + q.id;
 
     const summary = el('summary');
-    summary.appendChild(el('span', 'idx', String(q.index + 1)));
-    summary.appendChild(el('span', null, q.title));
-    summary.appendChild(el('span', 'tiny muted', q.subtitle || ''));
-    const sBadge = el('span', typeBadgeClass(q.type), TYPE_SHORT[q.type]);
-    sBadge.style.marginLeft = 'auto';
-    summary.appendChild(sBadge);
-    if (q.doublePoints) summary.appendChild(el('span', 'badge x2', '2배'));
     details.appendChild(summary);
+
+    // 저장 직후에도 접힌 요약(제목·유형·배지)이 다시 열지 않아도 바로 최신 상태로 보이도록 분리해둔다.
+    function refreshSummary(cur) {
+      summary.innerHTML = '';
+      summary.appendChild(el('span', 'idx', String(cur.index != null ? cur.index + 1 : q.index + 1)));
+      summary.appendChild(el('span', null, cur.title));
+      summary.appendChild(el('span', 'tiny muted', cur.subtitle || ''));
+      const sBadge = el('span', typeBadgeClass(cur.type), TYPE_SHORT[cur.type]);
+      sBadge.style.marginLeft = 'auto';
+      summary.appendChild(sBadge);
+      if (cur.doublePoints) summary.appendChild(el('span', 'badge x2', '2배'));
+      const hasImage = cur.image || (cur.options || []).some(function (o) {
+        return o && o.image;
+      });
+      if (hasImage) summary.appendChild(el('span', 'badge', '🖼 이미지'));
+    }
+    refreshSummary(q);
 
     const body = el('div', 'editor-body');
 
@@ -311,14 +432,20 @@
     ta.placeholder = '참가자에게 보여줄 문제 내용';
     body.appendChild(field('문제 내용', ta));
 
+    // 문제 이미지 (모든 유형 공통)
+    body.appendChild(field('문제 이미지 (선택)', buildImageField('f-image', q.image)));
+
     // 객관식
     const choiceBox = el('div');
     choiceBox.dataset.sec = 'choice';
-    const optLabel = el('label', null, '보기 (라디오를 눌러 정답 지정)');
+    const optLabel = el('label', null, '보기 (라디오를 눌러 정답 지정, 이미지는 선택)');
     optLabel.style.cssText = 'display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px';
     choiceBox.appendChild(optLabel);
     const opts = q.options && q.options.length ? q.options : ['', '', '', ''];
     for (let i = 0; i < 4; i++) {
+      const opt = opts[i] && typeof opts[i] === 'object' ? opts[i] : { text: opts[i] || '', image: '' };
+      const optWrap = el('div');
+      optWrap.style.cssText = 'margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--border)';
       const line = el('div', 'opt-edit');
       const radio = el('input');
       radio.type = 'radio';
@@ -329,11 +456,13 @@
       const inp = el('input', 'input');
       inp.type = 'text';
       inp.dataset.f = 'f-option';
-      inp.value = opts[i] || '';
+      inp.value = opt.text || '';
       inp.placeholder = i + 1 + '번 보기';
       line.appendChild(radio);
       line.appendChild(inp);
-      choiceBox.appendChild(line);
+      optWrap.appendChild(line);
+      optWrap.appendChild(buildImageField('f-option-image', opt.image));
+      choiceBox.appendChild(optWrap);
     }
     body.appendChild(choiceBox);
 
@@ -400,8 +529,12 @@
     saveBtn.addEventListener('click', function () {
       const payload = collect(body, q);
       socket.emit('admin:saveQuestion', { question: payload }, function (res) {
-        if (res && res.ok) toast(payload.title + ' 저장 완료 ✓', 'ok');
-        else toast((res && res.error) || '저장 실패', 'err');
+        if (res && res.ok) {
+          toast(payload.title + ' 저장 완료 ✓', 'ok');
+          refreshSummary(payload);
+        } else {
+          toast((res && res.error) || '저장 실패', 'err');
+        }
       });
     });
     const startBtn = el('button', 'btn ghost small', '▶ 저장하고 바로 출제');
@@ -412,6 +545,7 @@
           toast((res && res.error) || '저장 실패', 'err');
           return;
         }
+        refreshSummary(payload);
         socket.emit('admin:startQuestion', { questionId: q.id }, function (r2) {
           if (!r2 || !r2.ok) toast((r2 && r2.error) || '출제 실패', 'err');
           else toast('출제했습니다!', 'ok');
@@ -456,12 +590,21 @@
       const n = body.querySelector('[data-f="' + f + '"]');
       return n ? n.value : '';
     }
-    const options = Array.prototype.map.call(
+    const optionTexts = Array.prototype.map.call(
       body.querySelectorAll('[data-f="f-option"]'),
       function (n) {
         return n.value;
       }
     );
+    const optionImages = Array.prototype.map.call(
+      body.querySelectorAll('[data-f="f-option-image"]'),
+      function (n) {
+        return n.value;
+      }
+    );
+    const options = optionTexts.map(function (text, i) {
+      return { text: text, image: optionImages[i] || '' };
+    });
     const checkedRadio = body.querySelector('[data-f="f-answerIndex"]:checked');
     const lefts = body.querySelectorAll('[data-f="f-pair-left"]');
     const rights = body.querySelectorAll('[data-f="f-pair-right"]');
@@ -475,6 +618,7 @@
       subtitle: val('f-subtitle'),
       type: val('f-type'),
       text: val('f-text'),
+      image: val('f-image'),
       timeLimit: parseInt(val('f-timeLimit'), 10) || q.timeLimit,
       hint: val('f-hint'),
       doublePoints: !!body.querySelector('[data-f="f-doublePoints"]').checked,
