@@ -86,21 +86,24 @@
 
   /**
    * 라이브 반응 스티커 5종.
-   * key 는 CSS 클래스(.stk-*)와 짝을 이루고, 서버에는 인덱스(0~4)만 오간다.
+   * 그림은 public/img/stickers/<key>.png 이고, 서버에는 인덱스(0~4)만 오간다.
    */
   const EMOTES = [
-    { key: 'k', text: 'ㅋㅋㅋㅋㅋ', label: '웃김' },
-    { key: 'crazy', text: '미친!!', label: '미친' },
-    { key: 'hard', text: '어려워요ㅠ', label: '어려움' },
-    { key: 'easy', text: '쉽다 풉ㅋ', label: '쉬움' },
-    { key: 'fast', text: '빨리빨리!', label: '빨리' },
+    { key: 'k', label: 'ㅋㅋㅋㅋㅋ' },
+    { key: 'crazy', label: '미친!!' },
+    { key: 'hard', label: '어려워요ㅠ' },
+    { key: 'easy', label: '쉽다 풉ㅋ' },
+    { key: 'fast', label: '빨리빨리!' },
   ];
 
-  /** 스티커 한 장 DOM */
+  /** 스티커 한 장 DOM (첨부해 주신 스티커 이미지 그대로 사용) */
   function makeSticker(index) {
     const e = EMOTES[index];
     if (!e) return null;
-    const n = el('div', 'sticker stk-' + e.key, e.text);
+    const n = el('img', 'sticker stk-' + e.key);
+    n.src = '/img/stickers/' + e.key + '.png';
+    n.alt = e.label;
+    n.draggable = false;
     return n;
   }
 
@@ -127,7 +130,7 @@
         const item = el('div', 'emote-item');
         // 같은 자리에 겹쳐 쌓이지 않도록 가로 위치를 살짝 흩뜨린다.
         // 왼쪽으로 흘러가도(--drift) 잘리지 않도록 시작 위치에 여유를 둔다.
-        item.style.setProperty('--ex', (14 + Math.random() * 40).toFixed(0) + 'px');
+        item.style.setProperty('--ex', (14 + Math.random() * 80).toFixed(0) + 'px');
         item.style.setProperty('--drift', (Math.random() * 24 - 12).toFixed(0) + 'px');
         item.appendChild(sticker);
         layerNode.appendChild(item);

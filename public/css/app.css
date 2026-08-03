@@ -1395,37 +1395,18 @@ h3 {
  * 라이브 반응 스티커
  * ================================================================== */
 
-/* 스티커 한 장 (참고 이미지의 굵은 외곽선 + 흰 테두리 느낌) */
+/*
+ * 스티커 그림 (public/img/stickers/*.png).
+ * 가로 비율이 제각각이라 폭으로 맞추면 크기가 들쭉날쭉해 보인다.
+ * 높이를 기준으로 맞춰야 다섯 개가 비슷한 무게로 보인다.
+ */
 .sticker {
-  display: inline-block;
-  padding: 7px 13px;
-  border-radius: 12px;
-  background: #fff;
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  white-space: nowrap;
-  line-height: 1.25;
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.4);
-  -webkit-text-stroke: 3px #14121f;
-  paint-order: stroke fill; /* 외곽선을 글자 뒤에 그려 획이 얇아지지 않게 */
+  display: block;
+  height: 54px;
+  width: auto;
   user-select: none;
-}
-.stk-k {
-  color: #1a1a1a;
-  -webkit-text-stroke-width: 0;
-}
-.stk-crazy {
-  color: #ff2f2f;
-}
-.stk-hard {
-  color: #a877ff;
-}
-.stk-easy {
-  color: #86d02b;
-}
-.stk-fast {
-  color: #ff8c1a;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
 }
 
 /* 아래에서 떠오르는 레이어. 퀴즈를 가리지 않도록 화면 하단 띠 안에서만 움직인다. */
@@ -1517,15 +1498,8 @@ h3 {
   transform: scale(0.88);
 }
 .emote-btn .sticker {
-  font-size: 13px;
-  padding: 5px 9px;
-  border-radius: 9px;
-  -webkit-text-stroke-width: 2.5px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-}
-.emote-btn.stk-k .sticker,
-.emote-btn .sticker.stk-k {
-  -webkit-text-stroke-width: 0;
+  height: 30px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
 }
 
 /* 반응 바가 떠 있는 동안 화면 아래 여백과 제출 버튼 위치를 그만큼 올린다. */
@@ -1547,9 +1521,14 @@ body.has-emote-bar .toast-wrap {
   width: 320px;
 }
 
-@media (max-width: 360px) {
+@media (max-width: 380px) {
   .emote-btn .sticker {
-    font-size: 12px;
-    padding: 4px 7px;
+    height: 25px;
+  }
+  .emote-bar {
+    gap: 4px;
+  }
+  .sticker {
+    height: 46px;
   }
 }
