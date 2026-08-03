@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d0b1f" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>퀴즈퀴즈 🎉</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>"
+    />
+  </head>
+  <body>
+    <!-- 1. 닉네임 입력 -->
+    <section id="screen-join" class="screen active">
+      <div class="join-wrap">
+        <div>
+          <div class="logo">퀴즈퀴즈</div>
+          <p class="center muted" style="margin-top: 6px">닉네임을 입력하고 함께 즐겨요!</p>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="nick">닉네임 (1~12자)</label>
+            <input
+              id="nick"
+              class="input"
+              type="text"
+              maxlength="12"
+              placeholder="예) 초코마루"
+              autocomplete="off"
+              autocapitalize="off"
+              enterkeyhint="go"
+            />
+          </div>
+          <button id="join-btn" class="btn full">입장하기</button>
+          <p class="tiny muted center" style="margin: 12px 0 0">
+            중간에 나가더라도 <b>같은 닉네임</b>으로 다시 들어오면<br />점수를 그대로 이어받아요.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 보드 (하트) -->
+    <section id="screen-board" class="screen">
+      <div class="topbar">
+        <span class="conn-dot" id="conn-dot"></span>
+        <span class="me" id="me-nick">-</span>
+        <span class="muted tiny" id="player-count">👥 0</span>
+        <span class="score" id="me-score">0점</span>
+      </div>
+
+      <p class="board-hint">
+        궁금한 칸을 <b>여러 번 눌러</b> 하트를 보내세요 💗<br />진행자가 하트를 보고 다음 문제를 정해요!
+      </p>
+
+      <div class="board" id="board"></div>
+
+      <p class="tiny muted center" style="margin: 18px 0 0">진행자가 문제를 고를 때까지 기다려 주세요.</p>
+    </section>
+
+    <!-- 3. 문제 -->
+    <section id="screen-question" class="screen">
+      <div class="q-head">
+        <span class="badge" id="q-title">-</span>
+        <span class="badge" id="q-type">-</span>
+        <span class="badge x2 hidden" id="q-x2">⭐ 2배 점수</span>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+        <div class="timer-row">
+          <span id="submitted-count">제출 0명</span>
+          <span class="timer-num" id="timer-num">0</span>
+        </div>
+      </div>
+
+      <div class="q-text" id="q-text"></div>
+
+      <div id="q-body"></div>
+
+      <div class="hint-box hidden" id="hint-box"></div>
+
+      <div class="submit-bar">
+        <button id="submit-btn" class="btn full">제출하기</button>
+      </div>
+
+      <div class="waiting hidden" id="q-waiting">
+        <div class="big">⏳</div>
+        <div style="font-weight: 800; font-size: 18px">제출 완료!</div>
+        <div class="muted" id="q-waiting-sub">다른 친구들을 기다리는 중…</div>
+      </div>
+    </section>
+
+    <!-- 4. 결과 -->
+    <section id="screen-result" class="screen">
+      <div class="result-head">
+        <div class="result-emoji" id="r-emoji">🎯</div>
+        <h2 id="r-title">결과</h2>
+        <div class="gain" id="r-gain"></div>
+        <div class="muted tiny" id="r-total"></div>
+      </div>
+
+      <div class="answer-box">
+        <div class="tiny muted">정답</div>
+        <div style="font-weight: 800; font-size: 17px" id="r-answer">-</div>
+      </div>
+
+      <div>
+        <div style="font-weight: 800; margin-bottom: 4px">이번 문제 순위</div>
+        <div class="rank-list" id="r-list"></div>
+      </div>
+
+      <p class="tiny muted center" style="margin: 18px 0 0">진행자가 다음 문제를 준비하고 있어요…</p>
+    </section>
+
+    <!-- 5. 퍼즐 연습 -->
+    <section id="screen-practice" class="screen">
+      <div class="q-head">
+        <span class="badge type-puzzle">🧩 연습하기</span>
+      </div>
+      <div class="q-text" id="pr-text">카드를 눌러 짝을 맞춰보세요!</div>
+      <p class="puzzle-legend">
+        왼쪽 카드를 누른 뒤 오른쪽 카드를 누르면 연결돼요. 연결된 카드를 다시 누르면 해제됩니다.
+      </p>
+      <div id="pr-body"></div>
+      <div class="card center" style="margin-top: 16px">
+        <div id="pr-status" class="muted">아직 연결되지 않은 카드가 있어요.</div>
+        <button id="pr-reset" class="btn ghost small" style="margin-top: 10px">다시 하기</button>
+      </div>
+      <p class="tiny muted center" style="margin: 16px 0 0">
+        연습 화면이에요. 점수에는 반영되지 않아요 🙂
+      </p>
+    </section>
+
+    <!-- 카운트다운 오버레이 -->
+    <div class="overlay" id="overlay-count">
+      <div class="overlay-box">
+        <div class="badge" id="oc-title">-</div>
+        <div style="font-weight: 800; margin-top: 10px" id="oc-sub"></div>
+        <div class="count-num" id="oc-num">3</div>
+        <div style="font-weight: 800; font-size: 18px">초 뒤 문제가 출제됩니다</div>
+        <div class="muted tiny" style="margin-top: 8px" id="oc-type"></div>
+      </div>
+    </div>
+
+    <!-- 순위 공개 오버레이 -->
+    <div class="overlay" id="overlay-rank">
+      <div class="overlay-box">
+        <div style="font-size: 40px">🏆</div>
+        <h2>현재 순위</h2>
+        <div class="rank-list ranking-scroll" id="rank-list"></div>
+      </div>
+    </div>
+
+    <div class="toast-wrap" id="toasts"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/player.js"></script>
+  </body>
+</html>
