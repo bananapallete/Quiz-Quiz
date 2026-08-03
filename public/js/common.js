@@ -84,6 +84,64 @@
     }
   }
 
+  /**
+   * 라이브 반응 스티커 5종.
+   * key 는 CSS 클래스(.stk-*)와 짝을 이루고, 서버에는 인덱스(0~4)만 오간다.
+   */
+  const EMOTES = [
+    { key: 'k', text: 'ㅋㅋㅋㅋㅋ', label: '웃김' },
+    { key: 'crazy', text: '미친!!', label: '미친' },
+    { key: 'hard', text: '어려워요ㅠ', label: '어려움' },
+    { key: 'easy', text: '쉽다 풉ㅋ', label: '쉬움' },
+    { key: 'fast', text: '빨리빨리!', label: '빨리' },
+  ];
+
+  /** 스티커 한 장 DOM */
+  function makeSticker(index) {
+    const e = EMOTES[index];
+    if (!e) return null;
+    const n = el('div', 'sticker stk-' + e.key, e.text);
+    return n;
+  }
+
+  /**
+   * 화면 아래에서 채팅처럼 떠오르는 반응 레이어.
+   * 동시에 최대 5개까지만 보이고, 넘치면 가장 오래된 것부터 지운다.
+   */
+  function createEmoteLayer(layerNode) {
+    const MAX_VISIBLE = 5;
+    const LIFE_MS = 2800; // CSS emote-life 애니메이션 길이와 맞춰야 한다
+    const live = [];
+
+    function remove(node) {
+      const i = live.indexOf(node);
+      if (i !== -1) live.splice(i, 1);
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }
+
+    return {
+      show: function (index) {
+        const sticker = makeSticker(index);
+        if (!sticker || !layerNode) return;
+
+        const item = el('div', 'emote-item');
+        // 같은 자리에 겹쳐 쌓이지 않도록 가로 위치를 살짝 흩뜨린다.
+        // 왼쪽으로 흘러가도(--drift) 잘리지 않도록 시작 위치에 여유를 둔다.
+        item.style.setProperty('--ex', (14 + Math.random() * 40).toFixed(0) + 'px');
+        item.style.setProperty('--drift', (Math.random() * 24 - 12).toFixed(0) + 'px');
+        item.appendChild(sticker);
+        layerNode.appendChild(item);
+        live.push(item);
+
+        while (live.length > MAX_VISIBLE) remove(live[0]);
+
+        setTimeout(function () {
+          remove(item);
+        }, LIFE_MS);
+      },
+    };
+  }
+
   const PAIR_COLORS = [
     '#7c5cff',
     '#ff4d8d',
@@ -108,5 +166,8 @@
     fmtSeconds: fmtSeconds,
     vibrate: vibrate,
     PAIR_COLORS: PAIR_COLORS,
+    EMOTES: EMOTES,
+    makeSticker: makeSticker,
+    createEmoteLayer: createEmoteLayer,
   };
 })(window);

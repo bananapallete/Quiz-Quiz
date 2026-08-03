@@ -24,6 +24,26 @@
     myPuzzleAnswer: null, // 결과 화면에서 내 연결과 정답을 비교하려고 보관
   };
 
+  /* ---------------- 라이브 반응 스티커 ---------------- */
+
+  const emoteLayer = QQ.createEmoteLayer($('#emote-layer'));
+
+  (function buildEmoteBar() {
+    const bar = $('#emote-bar');
+    QQ.EMOTES.forEach(function (e, i) {
+      const btn = el('button', 'emote-btn');
+      btn.type = 'button';
+      btn.title = e.label;
+      btn.setAttribute('aria-label', e.label + ' 반응 보내기');
+      btn.appendChild(QQ.makeSticker(i));
+      btn.addEventListener('click', function () {
+        socket.emit('emote:send', { id: i });
+        vibrate(8);
+      });
+      bar.appendChild(btn);
+    });
+  })();
+
   /** 재생 중인 보기 음성을 모두 멈춘다. */
   function stopAllAudio() {
     S.audios.forEach(function (a) {
@@ -44,6 +64,10 @@
       const node = document.getElementById('screen-' + s);
       if (node) node.classList.toggle('active', s === name);
     });
+    // 반응 스티커 바는 입장한 뒤에만 보여준다. (닉네임 입력 화면에서는 숨김)
+    const showBar = name !== 'join';
+    $('#emote-bar').classList.toggle('hidden', !showBar);
+    document.body.classList.toggle('has-emote-bar', showBar);
     window.scrollTo(0, 0);
   }
 
@@ -1192,6 +1216,10 @@
 
   socket.on('players:count', function (d) {
     $('#player-count').textContent = '👥 ' + d.count;
+  });
+
+  socket.on('emote:show', function (d) {
+    emoteLayer.show(d && d.id);
   });
 
   socket.on('players:roster', function (d) {

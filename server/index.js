@@ -147,6 +147,8 @@ function normalizeQuestions(list) {
 }
 
 const QUESTION_TYPES = ['choice', 'audio', 'short', 'puzzle', 'approx'];
+/** 라이브 반응 스티커 개수 (public/js/common.js 의 EMOTES 와 맞춰야 함) */
+const EMOTE_COUNT = 5;
 const MAX_OPTIONS = 8;
 /** 객관식처럼 보기 중 하나를 고르는 유형 (채점 방식이 같다) */
 const CHOICE_LIKE = ['choice', 'audio'];
@@ -930,6 +932,20 @@ io.on('connection', (socket) => {
     if (socket.data.tapTimes.length >= 10) return; // 초당 10회 제한
     socket.data.tapTimes.push(now);
     tapHeart(payload && payload.questionId);
+  });
+
+  // 라이브 반응 스티커 (5종). 참가자가 누르면 모두에게 그대로 전달한다.
+  socket.on('emote:send', (payload) => {
+    if (!socket.data.playerKey) return;
+    // clampInt 는 값을 잘라 맞추므로 여기서는 쓰지 않는다.
+    // 범위를 벗어난 id 는 다른 스티커로 바뀌지 않도록 그냥 버린다.
+    const id = Number(payload && payload.id);
+    if (!Number.isInteger(id) || id < 0 || id >= EMOTE_COUNT) return;
+    const now = Date.now();
+    socket.data.emoteTimes = (socket.data.emoteTimes || []).filter((t) => now - t < 1000);
+    if (socket.data.emoteTimes.length >= 4) return; // 초당 4회 제한
+    socket.data.emoteTimes.push(now);
+    io.emit('emote:show', { id });
   });
 
   socket.on('answer:submit', (payload, cb) => {

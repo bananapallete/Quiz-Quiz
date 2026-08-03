@@ -1091,6 +1091,11 @@
     renderPlayers(d.count, d.players);
   });
 
+  const emoteLayer = QQ.createEmoteLayer($('#emote-layer'));
+  socket.on('emote:show', function (d) {
+    emoteLayer.show(d && d.id);
+  });
+
   socket.on('hearts:update', function (d) {
     if (!A.state) return;
     (d.items || []).forEach(function (item) {
