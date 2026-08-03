@@ -614,11 +614,15 @@ h2::before {
   margin: 12px 0 6px;
 }
 .q-image-wrap img {
-  width: 100%;
+  /* 잘리지 않게 원본 비율 그대로 축소만 한다 (가로/세로 중 먼저 닿는 쪽에 맞춤) */
+  max-width: 100%;
   max-height: 280px;
-  object-fit: cover;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   border-radius: var(--r-md);
   display: block;
+  margin: 0 auto;
   border: 1.5px solid var(--border);
 }
 
@@ -660,11 +664,14 @@ h2::before {
   gap: 14px;
 }
 .opt-img {
-  width: 100%;
+  max-width: 100%;
   max-height: 150px;
-  object-fit: cover;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   border-radius: 10px;
   display: block;
+  margin: 0 auto;
 }
 .opt .k {
   width: 30px;
@@ -779,11 +786,14 @@ h2::before {
   transition: transform 0.06s ease, border-color 0.15s ease;
 }
 .pcard-img {
-  width: 100%;
-  max-height: 92px;
-  object-fit: cover;
+  max-width: 100%;
+  max-height: 120px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   border-radius: 8px;
   display: block;
+  margin: 0 auto;
 }
 .pcard-row {
   display: flex;
@@ -1074,7 +1084,7 @@ h2::before {
   width: 46px;
   height: 46px;
   flex: 0 0 46px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
 }
 .bd-item .mark {
@@ -1118,7 +1128,7 @@ h2::before {
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
 }
 .bd-arrow {

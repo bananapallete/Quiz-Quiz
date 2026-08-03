@@ -91,7 +91,7 @@
 
     const preview = el('img');
     preview.style.cssText =
-      'max-width:220px;max-height:130px;border-radius:10px;display:none;margin-bottom:6px;border:1px solid var(--border);object-fit:cover';
+      'max-width:220px;max-height:130px;border-radius:10px;display:none;margin-bottom:6px;border:1px solid var(--border);object-fit:contain';
 
     const row = el('div');
     row.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
@@ -1015,6 +1015,8 @@
         played: '출제 기록을 모두 지울까요?',
         scores: '모든 참가자의 점수를 0으로 만들까요?',
         players: '참가자를 전부 삭제할까요? (점수도 사라집니다)',
+        questions:
+          '16문제를 기본 문제(사진 포함)로 되돌릴까요?\n지금까지 편집한 문제 내용은 사라집니다.',
         all: '하트 · 점수 · 참가자 · 출제기록을 모두 초기화할까요?',
       };
       if (!confirm(labels[what] || '진행할까요?')) return;

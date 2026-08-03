@@ -1168,6 +1168,16 @@ io.on('connection', (socket) => {
       io.to('players').emit('player:kicked', { reason: '진행자가 게임을 초기화했습니다.' });
       for (const s of io.sockets.sockets.values()) s.data.playerKey = null;
       state.players = {};
+    } else if (what === 'questions') {
+      // 저장된 문제가 코드의 기본 문제(사진 포함)를 덮어쓰고 있을 때 되돌리는 용도.
+      // 진행 중인 라운드가 있으면 먼저 정리한다.
+      clearRoundTimers();
+      state.round = null;
+      state.phase = 'lobby';
+      state.rankingVisible = false;
+      state.questions = JSON.parse(JSON.stringify(defaultQuestions));
+      io.emit('ranking:hide');
+      io.emit('board:show', { board: boardPayload() });
     } else if (what === 'all') {
       state.hearts = {};
       state.played = {};
