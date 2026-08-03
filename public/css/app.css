@@ -20,6 +20,12 @@
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  /*
+   * 하트 칸이나 숫자 버튼을 연타할 때 "더블탭 확대"가 걸리지 않게 한다.
+   * manipulation 은 스크롤(pan)과 손가락 두 개로 벌리는 확대(pinch)는 그대로 두고,
+   * 더블탭 확대만 끈다. 덤으로 탭 반응이 300ms 빨라진다.
+   */
+  touch-action: manipulation;
 }
 
 html,
@@ -27,6 +33,9 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
+  /* 가로 모드로 돌렸을 때 글자가 제멋대로 커지는 것도 막는다 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
