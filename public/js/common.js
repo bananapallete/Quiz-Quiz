@@ -101,7 +101,7 @@
     const e = EMOTES[index];
     if (!e) return null;
     const n = el('img', 'sticker stk-' + e.key);
-    n.src = '/img/stickers/' + e.key + '.png';
+    n.src = '/img/stickers/' + e.key + '.png?v=2';
     n.alt = e.label;
     n.draggable = false;
     return n;
@@ -195,16 +195,16 @@
   }
   blockZoom();
 
-  // 퍼즐 연결선 색. 브랜드 강조색 3종을 먼저 쓰고, 모자라면 카드 면 색으로 잇는다.
+  // 퍼즐 연결선 색. 디자인 가이드의 그라디언트/서브 강조색을 순서대로 쓴다.
   const PAIR_COLORS = [
-    '#fe2f2f',
-    '#7333f1',
-    '#d7b73b',
-    '#1b5bff',
-    '#ffa0f0',
-    '#b4ff91',
-    '#ff9559',
-    '#a0e9ff',
+    '#59bfff',
+    '#ffc24d',
+    '#7a6bf2',
+    '#8cebff',
+    '#ff5966',
+    '#268cf2',
+    '#7ddeff',
+    '#123dad',
   ];
 
   global.QQ = {
