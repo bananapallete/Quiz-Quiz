@@ -10,9 +10,14 @@
  * ================================================================== */
 
 :root {
-  /* 색 */
-  --black: #000000;
-  --white: #ffffff;
+  /*
+   * 순수 흑백(#000/#fff)은 대비가 21:1로 최대치라 화면을 오래 보면 눈이 아프다.
+   * 카드 메타포와 2px 테두리 언어는 그대로 두고, 바탕/카드 면 색만
+   * 완전한 흑백에서 살짝 눌러서(피로도를 낮추는) 톤으로 바꾼다.
+   * (대비는 여전히 약 13:1 로, 일반 텍스트 기준 WCAG AA 를 넉넉히 넘는다)
+   */
+  --black: #18161f;
+  --white: #f4f1ea;
   --red: #fe2f2f;
   --violet: #7333f1;
   --gold: #d7b73b;
@@ -308,7 +313,7 @@ h3 {
   width: 120px;
   height: 165px;
   border-radius: var(--r-card);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 2px rgba(244, 241, 234, 0.22);
   pointer-events: none;
   z-index: -1;
 }
@@ -428,8 +433,8 @@ h3 {
 }
 .tile.played {
   background: transparent;
-  color: rgba(255, 255, 255, 0.42);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.22);
+  color: rgba(244, 241, 234, 0.42);
+  box-shadow: inset 0 0 0 2px rgba(244, 241, 234, 0.22);
 }
 .tile.live {
   box-shadow: inset 0 0 0 4px var(--violet);
@@ -573,7 +578,7 @@ h3 {
   align-items: center;
   justify-content: center;
   padding: var(--sp-24);
-  background: rgba(0, 0, 0, 0.88);
+  background: rgba(24, 22, 31, 0.88);
 }
 .overlay.active {
   display: flex;
@@ -1342,7 +1347,7 @@ h3 {
   justify-content: center;
   padding: 7px 8px calc(7px + var(--safe-b));
   background: var(--black);
-  border-top: 2px solid rgba(255, 255, 255, 0.25);
+  border-top: 2px solid rgba(244, 241, 234, 0.25);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -1475,8 +1480,8 @@ body.has-emote-bar .toast-wrap {
 }
 .a-tile.played {
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.22);
+  color: rgba(244, 241, 234, 0.5);
+  box-shadow: inset 0 0 0 2px rgba(244, 241, 234, 0.22);
 }
 .a-tile.hot {
   box-shadow: inset 0 0 0 4px var(--red);
@@ -1554,7 +1559,7 @@ body.has-emote-bar .toast-wrap {
   align-items: center;
   gap: 8px;
   padding: 10px 4px;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 2px solid rgba(24, 22, 31, 0.1);
 }
 .player-row:last-child {
   border-bottom: none;
@@ -1659,7 +1664,7 @@ body.has-emote-bar .toast-wrap {
 }
 .editor-body {
   padding: 6px 18px 18px;
-  border-top: 2px solid rgba(0, 0, 0, 0.12);
+  border-top: 2px solid rgba(24, 22, 31, 0.12);
 }
 /* 편집기(흰 카드) 안의 버튼은 색을 뒤집는다 */
 .editor-body .btn,
