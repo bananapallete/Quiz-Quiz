@@ -129,11 +129,12 @@ function normalizeQuestions(list) {
       image: clampImage(q.image),
       timeLimit: clampInt(q.timeLimit, 5, 600, 30),
       hint: q.hint || '',
+      explanation: String(q.explanation || '').slice(0, 500),
       doublePoints: !!q.doublePoints,
       options: normalizeOptions(q.options),
       answerIndex: clampInt(q.answerIndex, 0, 5, 0),
       answers: Array.isArray(q.answers) ? q.answers : [],
-      pairs: Array.isArray(q.pairs) ? q.pairs.filter((p) => p && (p.left || p.right)) : [],
+      pairs: normalizePairs(q.pairs),
     });
   }
   return out;
@@ -159,11 +160,22 @@ function clampImage(v) {
 /** 보기(options)를 {text, image} 형태로 통일한다. 예전 버전(문자열 배열)도 그대로 읽을 수 있게 둔다. */
 function normalizeOptions(options) {
   if (!Array.isArray(options)) return ['', '', '', ''].map((t) => ({ text: t, image: '' }));
-  return options.slice(0, 6).map((o) =>
-    typeof o === 'string'
-      ? { text: o.slice(0, 120), image: '' }
-      : { text: String((o && o.text) || '').slice(0, 120), image: clampImage(o && o.image) }
-  );
+  return options.slice(0, 6).map((o) => normalizeCard(o, 120));
+}
+
+/** 퍼즐 카드(왼쪽/오른쪽 한 장)를 {text, image} 형태로 통일한다. */
+function normalizeCard(c, maxLen) {
+  if (typeof c === 'string') return { text: c.slice(0, maxLen), image: '' };
+  return { text: String((c && c.text) || '').slice(0, maxLen), image: clampImage(c && c.image) };
+}
+
+/** 퍼즐 짝(pairs)을 {left:{text,image}, right:{text,image}} 형태로 통일한다. */
+function normalizePairs(pairs) {
+  if (!Array.isArray(pairs)) return [];
+  return pairs
+    .map((p) => ({ left: normalizeCard(p && p.left, 60), right: normalizeCard(p && p.right, 60) }))
+    .filter((p) => p.left.text.trim() !== '' && p.right.text.trim() !== '')
+    .slice(0, 8);
 }
 
 /* ------------------------------------------------------------------ *
@@ -247,8 +259,12 @@ function publicQuestion(q, round) {
       .map((o, i) => ({ i, text: o.text, image: o.image || '' }))
       .filter((o) => String(o.text).trim() !== '');
   } else if (q.type === 'puzzle') {
-    base.lefts = q.pairs.map((p, i) => ({ i, text: p.left }));
-    base.rights = round.rightOrder.map((i) => ({ i, text: q.pairs[i].right }));
+    base.lefts = q.pairs.map((p, i) => ({ i, text: p.left.text, image: p.left.image || '' }));
+    base.rights = round.rightOrder.map((i) => ({
+      i,
+      text: q.pairs[i].right.text,
+      image: q.pairs[i].right.image || '',
+    }));
   }
   return base;
 }
@@ -256,8 +272,39 @@ function publicQuestion(q, round) {
 function correctAnswerText(q) {
   if (q.type === 'choice') return (q.options[q.answerIndex] && q.options[q.answerIndex].text) || '';
   if (q.type === 'short') return (q.answers || []).join(' / ');
-  if (q.type === 'puzzle') return q.pairs.map((p) => `${p.left} → ${p.right}`).join(', ');
+  if (q.type === 'puzzle') return q.pairs.map((p) => `${p.left.text} → ${p.right.text}`).join(', ');
   return '';
+}
+
+/**
+ * 결과 화면에서 보여줄 전체 보기/카드 해설을 만든다.
+ * - choice : 1~n번 보기를 전부 보여주고 정답 표시
+ * - puzzle : 짝지어진 카드를 전부 보여줌
+ */
+function resultBreakdown(q) {
+  if (q.type === 'choice') {
+    return {
+      options: q.options
+        .map((o, i) => ({ i, text: o.text, image: o.image || '', correct: i === q.answerIndex }))
+        .filter((o) => o.text.trim() !== ''),
+    };
+  }
+  if (q.type === 'puzzle') {
+    return {
+      pairs: q.pairs.map((p) => ({
+        left: { text: p.left.text, image: p.left.image || '' },
+        right: { text: p.right.text, image: p.right.image || '' },
+      })),
+    };
+  }
+  return {};
+}
+
+/** 참가자에게 그대로 보여줄 참가자 명단 (점수는 뺀 닉네임 + 접속 상태만) */
+function playerRoster() {
+  return Object.values(state.players)
+    .sort((a, b) => a.joinedAt - b.joinedAt)
+    .map((p) => ({ nick: p.nick, connected: p.connected }));
 }
 
 /** 소켓 하나에 현재 상태 전체를 보낸다. */
@@ -268,6 +315,7 @@ function syncSocket(socket) {
     phase: state.phase,
     board: boardPayload(),
     playerCount: connectedPlayers().length,
+    playerRoster: playerRoster(),
     rankingVisible: state.rankingVisible,
     ranking: state.rankingVisible ? rankingList() : null,
     me: player ? { nick: player.nick, score: player.score } : null,
@@ -321,19 +369,23 @@ function activeRoundPayload(player) {
     };
   }
   if (state.phase === 'result' && round.results) {
-    return {
-      stage: 'result',
-      questionId: q.id,
-      title: q.title,
-      subtitle: q.subtitle,
-      type: q.type,
-      text: q.text,
-      image: q.image || '',
-      correctAnswer: correctAnswerText(q),
-      doublePoints: round.doublePoints,
-      results: round.results,
-      me: player ? round.results.find((r) => r.key === player.key) || null : null,
-    };
+    return Object.assign(
+      {
+        stage: 'result',
+        questionId: q.id,
+        title: q.title,
+        subtitle: q.subtitle,
+        type: q.type,
+        text: q.text,
+        image: q.image || '',
+        correctAnswer: correctAnswerText(q),
+        explanation: q.explanation || '',
+        doublePoints: round.doublePoints,
+        results: round.results,
+        me: player ? round.results.find((r) => r.key === player.key) || null : null,
+      },
+      resultBreakdown(q)
+    );
   }
   return null;
 }
@@ -345,6 +397,7 @@ function broadcastBoard() {
 function broadcastPlayers() {
   const count = connectedPlayers().length;
   io.to('players').emit('players:count', { count });
+  io.to('players').emit('players:roster', { players: playerRoster() });
   io.to('admins').emit('admin:players', {
     count,
     players: Object.values(state.players)
@@ -566,18 +619,25 @@ function endRound(reason) {
   state.phase = 'result';
   persist();
 
-  io.emit('round:end', {
-    questionId: round.questionId,
-    title: q ? q.title : '',
-    subtitle: q ? q.subtitle : '',
-    type: q ? q.type : '',
-    text: q ? q.text : '',
-    image: q ? q.image || '' : '',
-    correctAnswer: q ? correctAnswerText(q) : '',
-    doublePoints: round.doublePoints,
-    reason: reason || '',
-    results,
-  });
+  io.emit(
+    'round:end',
+    Object.assign(
+      {
+        questionId: round.questionId,
+        title: q ? q.title : '',
+        subtitle: q ? q.subtitle : '',
+        type: q ? q.type : '',
+        text: q ? q.text : '',
+        image: q ? q.image || '' : '',
+        correctAnswer: q ? correctAnswerText(q) : '',
+        explanation: q ? q.explanation || '' : '',
+        doublePoints: round.doublePoints,
+        reason: reason || '',
+        results,
+      },
+      q ? resultBreakdown(q) : {}
+    )
+  );
   broadcastBoard();
   broadcastPlayers();
   broadcastAdmin();
@@ -784,21 +844,14 @@ io.on('connection', (socket) => {
     q.image = clampImage(incoming.image);
     q.timeLimit = clampInt(incoming.timeLimit, 5, 600, q.timeLimit);
     q.hint = String(incoming.hint || '').slice(0, 300);
+    q.explanation = String(incoming.explanation || '').slice(0, 500);
     q.doublePoints = !!incoming.doublePoints;
     q.options = Array.isArray(incoming.options) ? normalizeOptions(incoming.options) : q.options;
     q.answerIndex = clampInt(incoming.answerIndex, 0, Math.max(0, q.options.length - 1), 0);
     q.answers = Array.isArray(incoming.answers)
       ? incoming.answers.map((a) => String(a).slice(0, 120)).filter((a) => a.trim() !== '')
       : q.answers;
-    q.pairs = Array.isArray(incoming.pairs)
-      ? incoming.pairs
-          .map((p) => ({
-            left: String((p && p.left) || '').slice(0, 60),
-            right: String((p && p.right) || '').slice(0, 60),
-          }))
-          .filter((p) => p.left.trim() !== '' && p.right.trim() !== '')
-          .slice(0, 8)
-      : q.pairs;
+    q.pairs = Array.isArray(incoming.pairs) ? normalizePairs(incoming.pairs) : q.pairs;
 
     persist();
     broadcastBoard();

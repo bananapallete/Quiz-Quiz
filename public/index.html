@@ -61,6 +61,14 @@
 
       <div class="board" id="board"></div>
 
+      <div class="card roster-card" id="roster-card">
+        <div class="roster-title">
+          <span>🙋 지금 함께하는 친구들</span>
+          <span class="badge" id="roster-count">0명</span>
+        </div>
+        <div class="roster-list" id="roster-list"></div>
+      </div>
+
       <p class="tiny muted center" style="margin: 18px 0 0">진행자가 문제를 고를 때까지 기다려 주세요.</p>
     </section>
 
@@ -119,8 +127,18 @@
         <div style="font-weight: 800; font-size: 17px" id="r-answer">-</div>
       </div>
 
+      <div class="explain-box hidden" id="r-explanation-box">
+        <div class="tiny" style="opacity: 0.75">해설</div>
+        <div id="r-explanation" style="font-weight: 600; margin-top: 2px"></div>
+      </div>
+
+      <div class="hidden" id="r-breakdown-wrap">
+        <div style="font-weight: 800; margin: 18px 0 8px" id="r-breakdown-title">전체 보기</div>
+        <div id="r-breakdown"></div>
+      </div>
+
       <div>
-        <div style="font-weight: 800; margin-bottom: 4px">이번 문제 순위</div>
+        <div style="font-weight: 800; margin: 18px 0 4px">이번 문제 순위</div>
         <div class="rank-list" id="r-list"></div>
       </div>
 

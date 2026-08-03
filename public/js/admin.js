@@ -99,7 +99,13 @@
     const fileInput = el('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
-    fileInput.style.cssText = 'max-width:190px;font-size:12px';
+    fileInput.style.cssText = 'max-width:150px;font-size:12px';
+
+    // 클릭 후 Ctrl+V 로도 붙여넣을 수 있게, 포커스를 받을 수 있는 영역을 별도로 둔다.
+    const pasteZone = el('div', null, '📋 여기 클릭 후 Ctrl+V');
+    pasteZone.tabIndex = 0;
+    pasteZone.style.cssText =
+      'padding:6px 10px;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:text;outline-offset:2px';
 
     const clearBtn = el('button', 'btn ghost small', '이미지 삭제');
     clearBtn.type = 'button';
@@ -116,9 +122,7 @@
       }
     }
 
-    fileInput.addEventListener('change', function () {
-      const file = fileInput.files && fileInput.files[0];
-      fileInput.value = '';
+    function loadFile(file) {
       if (!file) return;
       compressImageFile(file, 900, 0.72)
         .then(function (dataUrl) {
@@ -128,6 +132,28 @@
         .catch(function (err) {
           toast((err && err.message) || '이미지를 불러오지 못했어요.', 'err');
         });
+    }
+
+    fileInput.addEventListener('change', function () {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      loadFile(file);
+    });
+    pasteZone.addEventListener('paste', function (e) {
+      const items = (e.clipboardData && e.clipboardData.items) || [];
+      let imageItem = null;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf('image/') === 0) {
+          imageItem = items[i];
+          break;
+        }
+      }
+      if (!imageItem) {
+        toast('클립보드에 이미지가 없어요. 이미지를 먼저 복사해 주세요.', 'err');
+        return;
+      }
+      e.preventDefault();
+      loadFile(imageItem.getAsFile());
     });
     clearBtn.addEventListener('click', function () {
       hidden.value = '';
@@ -135,6 +161,7 @@
     });
 
     row.appendChild(fileInput);
+    row.appendChild(pasteZone);
     row.appendChild(clearBtn);
     wrap.appendChild(hidden);
     wrap.appendChild(preview);
@@ -189,10 +216,7 @@
       const full = (state.questions || []).find(function (x) {
         return x.id === q.id;
       });
-      const hasImage = full && (full.image || (full.options || []).some(function (o) {
-        return o && o.image;
-      }));
-      if (hasImage) meta.appendChild(el('span', 'badge', '🖼'));
+      if (questionHasImage(full)) meta.appendChild(el('span', 'badge', '🖼'));
       meta.appendChild(el('span', 'a-hearts', '💗 ' + (q.hearts || 0)));
       tile.appendChild(meta);
 
@@ -292,7 +316,7 @@
     if (q.type === 'puzzle')
       return q.pairs
         .map(function (p) {
-          return p.left + '→' + p.right;
+          return asCard(p.left).text + '→' + asCard(p.right).text;
         })
         .join(', ');
     return '';
@@ -392,10 +416,7 @@
       sBadge.style.marginLeft = 'auto';
       summary.appendChild(sBadge);
       if (cur.doublePoints) summary.appendChild(el('span', 'badge x2', '2배'));
-      const hasImage = cur.image || (cur.options || []).some(function (o) {
-        return o && o.image;
-      });
-      if (hasImage) summary.appendChild(el('span', 'badge', '🖼 이미지'));
+      if (questionHasImage(cur)) summary.appendChild(el('span', 'badge', '🖼 이미지'));
     }
     refreshSummary(q);
 
@@ -479,37 +500,63 @@
     // 퍼즐
     const puzzleBox = el('div');
     puzzleBox.dataset.sec = 'puzzle';
-    const pLabel = el('label', null, '매칭 짝 (왼쪽 ↔ 오른쪽, 최대 6쌍)');
+    const pLabel = el('label', null, '매칭 짝 (왼쪽 ↔ 오른쪽, 최대 6쌍 · 카드마다 이미지 첨부 가능)');
     pLabel.style.cssText = 'display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px';
     puzzleBox.appendChild(pLabel);
     const pairs = (q.pairs || []).slice();
     for (let i = 0; i < 6; i++) {
-      const p = pairs[i] || { left: '', right: '' };
+      const raw = pairs[i] || { left: '', right: '' };
+      const p = { left: asCard(raw.left), right: asCard(raw.right) };
+
+      const pairWrap = el('div');
+      pairWrap.style.cssText = 'margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--border)';
+
       const line = el('div', 'pair-edit');
       const l = el('input', 'input');
       l.type = 'text';
       l.dataset.f = 'f-pair-left';
-      l.value = p.left;
+      l.value = p.left.text;
       l.placeholder = '왼쪽 카드';
       const arrow = el('div', 'center muted', '↔');
       const r = el('input', 'input');
       r.type = 'text';
       r.dataset.f = 'f-pair-right';
-      r.value = p.right;
+      r.value = p.right.text;
       r.placeholder = '오른쪽 카드';
       const num = el('div', 'tiny muted center', String(i + 1));
       line.appendChild(l);
       line.appendChild(arrow);
       line.appendChild(r);
       line.appendChild(num);
-      puzzleBox.appendChild(line);
+      pairWrap.appendChild(line);
+
+      // 왼쪽/오른쪽 카드 이미지를 나란히
+      const imgRow = el('div');
+      imgRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px';
+      const leftImg = el('div');
+      leftImg.appendChild(smallLabel('왼쪽 카드 이미지'));
+      leftImg.appendChild(buildImageField('f-pair-left-image', p.left.image));
+      const rightImg = el('div');
+      rightImg.appendChild(smallLabel('오른쪽 카드 이미지'));
+      rightImg.appendChild(buildImageField('f-pair-right-image', p.right.image));
+      imgRow.appendChild(leftImg);
+      imgRow.appendChild(rightImg);
+      pairWrap.appendChild(imgRow);
+
+      puzzleBox.appendChild(pairWrap);
     }
     body.appendChild(puzzleBox);
 
-    // 힌트 / 2배
+    // 힌트 / 해설 / 2배
     const hintInput = inputNode('text', q.hint || '', 'f-hint');
     hintInput.placeholder = '종료 N초 전에 참가자에게 공개됩니다';
     body.appendChild(field('힌트', hintInput));
+
+    const explTa = el('textarea', 'textarea');
+    explTa.dataset.f = 'f-explanation';
+    explTa.value = q.explanation || '';
+    explTa.placeholder = '채점이 끝난 뒤 결과 화면에 보여줄 설명 (선택)';
+    body.appendChild(field('해설', explTa));
 
     const dblWrap = el('label');
     dblWrap.style.cssText = 'display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px;cursor:pointer';
@@ -585,6 +632,29 @@
     return n;
   }
 
+  /** 문제 본문·보기·퍼즐 카드 중 하나라도 이미지가 붙어 있는지 */
+  function questionHasImage(q) {
+    if (!q) return false;
+    if (q.image) return true;
+    if ((q.options || []).some(function (o) { return o && o.image; })) return true;
+    return (q.pairs || []).some(function (p) {
+      return p && (asCard(p.left).image || asCard(p.right).image);
+    });
+  }
+
+  function smallLabel(text) {
+    const n = el('div', 'tiny muted', text);
+    n.style.cssText = 'margin-bottom:4px;font-weight:700';
+    return n;
+  }
+
+  /** 퍼즐 카드는 예전엔 문자열이었고 지금은 {text, image} 다. 둘 다 받아준다. */
+  function asCard(c) {
+    return typeof c === 'string'
+      ? { text: c, image: '' }
+      : { text: (c && c.text) || '', image: (c && c.image) || '' };
+  }
+
   function collect(body, q) {
     function val(f) {
       const n = body.querySelector('[data-f="' + f + '"]');
@@ -608,9 +678,14 @@
     const checkedRadio = body.querySelector('[data-f="f-answerIndex"]:checked');
     const lefts = body.querySelectorAll('[data-f="f-pair-left"]');
     const rights = body.querySelectorAll('[data-f="f-pair-right"]');
+    const leftImgs = body.querySelectorAll('[data-f="f-pair-left-image"]');
+    const rightImgs = body.querySelectorAll('[data-f="f-pair-right-image"]');
     const pairs = [];
     for (let i = 0; i < lefts.length; i++) {
-      pairs.push({ left: lefts[i].value, right: rights[i] ? rights[i].value : '' });
+      pairs.push({
+        left: { text: lefts[i].value, image: leftImgs[i] ? leftImgs[i].value : '' },
+        right: { text: rights[i] ? rights[i].value : '', image: rightImgs[i] ? rightImgs[i].value : '' },
+      });
     }
     return {
       id: q.id,
@@ -621,6 +696,7 @@
       image: val('f-image'),
       timeLimit: parseInt(val('f-timeLimit'), 10) || q.timeLimit,
       hint: val('f-hint'),
+      explanation: val('f-explanation'),
       doublePoints: !!body.querySelector('[data-f="f-doublePoints"]').checked,
       options: options,
       answerIndex: checkedRadio ? Number(checkedRadio.value) : 0,
@@ -631,7 +707,7 @@
         })
         .filter(Boolean),
       pairs: pairs.filter(function (p) {
-        return p.left.trim() && p.right.trim();
+        return p.left.text.trim() && p.right.text.trim();
       }),
     };
   }

@@ -19,6 +19,7 @@
     tickTimer: null,
     countTimer: null,
     lastResult: null,
+    roster: [],
   };
 
   /* ---------------- 화면 전환 ---------------- */
@@ -72,6 +73,28 @@
   nickInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') join();
   });
+
+  /** 대기 화면에 지금 들어와 있는 사람들의 닉네임을 보여준다. */
+  function renderRoster(players) {
+    S.roster = players || [];
+    const list = $('#roster-list');
+    const online = S.roster.filter(function (p) {
+      return p.connected;
+    }).length;
+    $('#roster-count').textContent = online + '명';
+    list.innerHTML = '';
+    if (!S.roster.length) {
+      list.appendChild(el('div', 'roster-empty', '아직 아무도 없어요. 친구들을 기다리는 중…'));
+      return;
+    }
+    S.roster.forEach(function (p) {
+      const chip = el('span', 'roster-chip' + (p.connected ? '' : ' off'));
+      if (S.me && p.nick === S.me.nick) chip.classList.add('me');
+      chip.appendChild(el('span', 'dot'));
+      chip.appendChild(el('span', null, p.nick));
+      list.appendChild(chip);
+    });
+  }
 
   function updateMe() {
     if (!S.me) return;
@@ -168,13 +191,26 @@
     const leftNodes = {};
     const rightNodes = {};
 
+    /** 카드 한 장의 내용(이미지 + 점 + 글자)을 채운다. 점(.dot)은 연결 표시에 쓰인다. */
+    function fillCard(card, item) {
+      if (item.image) {
+        const img = el('img', 'pcard-img');
+        img.src = item.image;
+        img.alt = '';
+        card.appendChild(img);
+      }
+      const row = el('div', 'pcard-row');
+      const dot = el('span', 'dot');
+      dot.style.display = 'none';
+      row.appendChild(dot);
+      row.appendChild(el('span', null, item.text));
+      card.appendChild(row);
+    }
+
     lefts.forEach(function (item) {
       const card = el('button', 'pcard');
       card.type = 'button';
-      const dot = el('span', 'dot');
-      dot.style.display = 'none';
-      card.appendChild(dot);
-      card.appendChild(el('span', null, item.text));
+      fillCard(card, item);
       card.addEventListener('click', function () {
         if (map[item.i] != null) {
           delete map[item.i];
@@ -192,10 +228,7 @@
     rights.forEach(function (item) {
       const card = el('button', 'pcard');
       card.type = 'button';
-      const dot = el('span', 'dot');
-      dot.style.display = 'none';
-      card.appendChild(dot);
-      card.appendChild(el('span', null, item.text));
+      fillCard(card, item);
       card.addEventListener('click', function () {
         const owner = ownerOfRight(item.i);
         if (owner != null) {
@@ -487,6 +520,63 @@
 
   /* ---------------- 결과 ---------------- */
 
+  /** 결과 화면에 보기 전체(객관식) 또는 짝 전체(퍼즐)를 풀이로 보여준다. */
+  function renderBreakdown(data) {
+    const wrap = $('#r-breakdown-wrap');
+    const holder = $('#r-breakdown');
+    holder.innerHTML = '';
+
+    if (data.type === 'choice' && Array.isArray(data.options) && data.options.length) {
+      $('#r-breakdown-title').textContent = '전체 보기';
+      const list = el('div', 'bd-list');
+      data.options.forEach(function (o, order) {
+        const item = el('div', 'bd-item' + (o.correct ? ' correct' : ''));
+        item.appendChild(el('span', 'k', String(order + 1)));
+        if (o.image) {
+          const img = el('img');
+          img.src = o.image;
+          img.alt = '';
+          item.appendChild(img);
+        }
+        item.appendChild(el('span', 'tx', o.text));
+        if (o.correct) item.appendChild(el('span', 'mark', '정답 ✓'));
+        list.appendChild(item);
+      });
+      holder.appendChild(list);
+      wrap.classList.remove('hidden');
+      return;
+    }
+
+    if (data.type === 'puzzle' && Array.isArray(data.pairs) && data.pairs.length) {
+      $('#r-breakdown-title').textContent = '정답 짝';
+      const list = el('div', 'bd-list');
+      data.pairs.forEach(function (p) {
+        const item = el('div', 'bd-pair');
+        item.appendChild(sideNode(p.left));
+        item.appendChild(el('span', 'bd-arrow', '→'));
+        item.appendChild(sideNode(p.right));
+        list.appendChild(item);
+      });
+      holder.appendChild(list);
+      wrap.classList.remove('hidden');
+      return;
+    }
+
+    wrap.classList.add('hidden');
+  }
+
+  function sideNode(card) {
+    const node = el('div', 'bd-side');
+    if (card.image) {
+      const img = el('img');
+      img.src = card.image;
+      img.alt = '';
+      node.appendChild(img);
+    }
+    node.appendChild(el('span', null, card.text));
+    return node;
+  }
+
   function renderResult(data) {
     stopTicker();
     S.question = null;
@@ -545,6 +635,16 @@
 
     $('#r-answer').textContent = data.correctAnswer || '-';
 
+    const explBox = $('#r-explanation-box');
+    if (data.explanation && String(data.explanation).trim()) {
+      $('#r-explanation').textContent = data.explanation;
+      explBox.classList.remove('hidden');
+    } else {
+      explBox.classList.add('hidden');
+    }
+
+    renderBreakdown(data);
+
     const list = $('#r-list');
     list.innerHTML = '';
     if (!data.results || !data.results.length) {
@@ -589,12 +689,17 @@
     showScreen('practice');
     $('#pr-text').textContent = puzzle.text || '카드를 눌러 짝을 맞춰보세요!';
 
+    const card = function (c) {
+      return typeof c === 'string' ? { text: c, image: '' } : { text: (c && c.text) || '', image: (c && c.image) || '' };
+    };
     const lefts = puzzle.pairs.map(function (p, i) {
-      return { i: i, text: p.left };
+      const c = card(p.left);
+      return { i: i, text: c.text, image: c.image };
     });
     const rights = puzzle.pairs
       .map(function (p, i) {
-        return { i: i, text: p.right };
+        const c = card(p.right);
+        return { i: i, text: c.text, image: c.image };
       })
       .sort(function () {
         return Math.random() - 0.5;
@@ -650,6 +755,7 @@
     clock.sync(d.serverNow);
     renderBoard(d.board);
     $('#player-count').textContent = '👥 ' + d.playerCount;
+    renderRoster(d.playerRoster);
     if (d.me) {
       S.me = d.me;
       updateMe();
@@ -688,6 +794,10 @@
 
   socket.on('players:count', function (d) {
     $('#player-count').textContent = '👥 ' + d.count;
+  });
+
+  socket.on('players:roster', function (d) {
+    renderRoster(d.players);
   });
 
   socket.on('board:update', function (d) {

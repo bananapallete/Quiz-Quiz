@@ -22,6 +22,7 @@ function q(index, title, subtitle, extra) {
       image: '',
       timeLimit: 30,
       hint: '',
+      explanation: '',
       doublePoints: false,
       options: ['', '', '', ''],
       answerIndex: 0,
@@ -30,11 +31,19 @@ function q(index, title, subtitle, extra) {
     },
     extra
   );
-  // 보기는 여기서는 문자열로 짧게 적고, 실제로는 {text, image} 형태로 통일해서 내보낸다.
+  // 보기/카드는 여기서는 문자열로 짧게 적고, 실제로는 {text, image} 형태로 통일해서 내보낸다.
   merged.options = merged.options.map((o) =>
     typeof o === 'string' ? { text: o, image: '' } : { text: (o && o.text) || '', image: (o && o.image) || '' }
   );
+  merged.pairs = merged.pairs.map((p) => ({
+    left: toCard(p.left),
+    right: toCard(p.right),
+  }));
   return merged;
+}
+
+function toCard(c) {
+  return typeof c === 'string' ? { text: c, image: '' } : { text: (c && c.text) || '', image: (c && c.image) || '' };
 }
 
 const defaultQuestions = [
@@ -45,6 +54,7 @@ const defaultQuestions = [
     answerIndex: 1,
     timeLimit: 20,
     hint: '한강이 흐르는 도시!',
+    explanation: '서울은 1394년 조선의 도읍이 된 이래 지금까지 대한민국의 수도예요.',
   }),
   q(1, '상식 퀴즈', '누구나 아는 그것', {
     type: 'choice',
@@ -72,6 +82,7 @@ const defaultQuestions = [
     ],
     timeLimit: 45,
     hint: '프랑스의 수도는 에펠탑이 있는 곳!',
+    explanation: '수도는 그 나라의 정치·행정 중심 도시예요. 서울, 도쿄, 파리, 런던 모두 각 나라의 대표 도시랍니다.',
   }),
   q(4, '스피드 퀴즈', '빠른 손이 이긴다', {
     type: 'choice',
