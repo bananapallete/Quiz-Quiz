@@ -166,6 +166,14 @@ h3 {
   background: rgba(255, 77, 141, 0.22);
   color: #ffb6d0;
 }
+.badge.type-audio {
+  background: rgba(76, 201, 240, 0.22);
+  color: #a8e4f7;
+}
+.badge.type-approx {
+  background: rgba(255, 159, 28, 0.22);
+  color: #ffd6a0;
+}
 
 /* ---------- 참가자 화면 ---------- */
 
@@ -575,7 +583,7 @@ h3 {
 /* 퍼즐 짝 해설 */
 .bd-pair {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto 1fr auto;
   gap: 8px;
   align-items: center;
   padding: 12px;
@@ -602,6 +610,186 @@ h3 {
 .bd-arrow {
   color: var(--good);
   font-weight: 900;
+}
+/* 퍼즐 결과에서 내가 맞힌 짝 / 틀린 짝 구분 */
+.bd-pair.ok {
+  background: rgba(53, 208, 165, 0.16);
+  border-color: rgba(53, 208, 165, 0.55);
+}
+.bd-pair.no {
+  background: rgba(255, 107, 107, 0.12);
+  border-color: rgba(255, 107, 107, 0.45);
+}
+.bd-mark {
+  font-size: 16px;
+  line-height: 1;
+}
+.bd-approx {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 159, 28, 0.14);
+  border: 1px solid rgba(255, 159, 28, 0.45);
+  text-align: center;
+}
+.bd-approx-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.bd-approx-value {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--gold);
+  margin-top: 2px;
+}
+
+/* 결과 순위 줄의 부가 정보 (차이 / 맞힌 개수) */
+.rank-row .dv {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--good);
+  white-space: nowrap;
+}
+.rank-row.wrong .dv {
+  color: var(--muted);
+}
+
+/* ---------- 음성 보기 ---------- */
+
+.opt-play {
+  align-self: flex-start;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(76, 201, 240, 0.22);
+  color: #a8e4f7;
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bd-item .opt-play {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ---------- 근사치: 숫자 키패드 ---------- */
+
+.numpad-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 14px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--border);
+  margin-bottom: 14px;
+  min-height: 74px;
+}
+.numpad-value {
+  font-size: clamp(28px, 9vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  word-break: break-all;
+}
+.numpad-unit {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.numkey {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 18px 0;
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.15s ease;
+  user-select: none;
+}
+.numkey:active {
+  transform: scale(0.94);
+  background: rgba(124, 92, 255, 0.28);
+}
+.numkey.wide-back {
+  color: var(--bad);
+}
+
+/* ---------- 근사치: 날짜 스크롤 휠 ---------- */
+
+.wheel-display {
+  text-align: center;
+  font-size: clamp(20px, 6vw, 26px);
+  font-weight: 900;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--border);
+  margin-bottom: 12px;
+}
+.wheels {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 8px;
+}
+/* 가운데 표시선을 스크롤과 무관하게 고정하려고 한 겹 감싼다. */
+.wheel-wrap {
+  position: relative;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.wheel {
+  height: 190px;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.wheel::-webkit-scrollbar {
+  display: none;
+}
+.wheel-list {
+  display: block;
+}
+.wheel-pad {
+  height: 76px; /* (190 - 38) / 2 : 첫/마지막 항목도 가운데로 올 수 있게 */
+}
+.wheel-item {
+  height: 38px;
+  line-height: 38px;
+  text-align: center;
+  scroll-snap-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+.wheel-item.on {
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 900;
+  transform: scale(1.05);
+}
+/* 가운데 선택 영역 표시 */
+.wheel-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 76px;
+  height: 38px;
+  border-top: 1px solid rgba(124, 92, 255, 0.55);
+  border-bottom: 1px solid rgba(124, 92, 255, 0.55);
+  background: rgba(124, 92, 255, 0.1);
+  pointer-events: none;
 }
 
 /* 문제/결과 화면 상단 첨부 이미지 */
@@ -706,12 +894,24 @@ h3 {
 .puzzle {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 10px 44px; /* 가운데에 연결선이 지나갈 공간 */
   align-items: start;
+  position: relative;
 }
 .puzzle-col {
   display: grid;
   gap: 10px;
+  min-width: 0;
+}
+/* 연결선은 카드 위에 겹쳐 그리되 터치는 카드로 통과시킨다. */
+.puzzle-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+  overflow: visible;
 }
 .pcard {
   padding: 12px 10px;
@@ -1157,4 +1357,36 @@ h3 {
   border: 1px solid var(--border);
   margin: 8px 0;
   word-break: break-all;
+}
+
+/* 문제 편집기: 보기 블록 & 붙여넣기 영역 */
+.opt-block {
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.opt-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+.opt-edit .btn.small {
+  flex: 0 0 auto;
+}
+.paste-zone {
+  padding: 6px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: text;
+  outline-offset: 2px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.paste-zone:focus {
+  border-color: var(--accent);
+  color: var(--text);
 }

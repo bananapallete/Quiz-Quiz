@@ -53,10 +53,18 @@
 
   const TYPE_LABEL = {
     choice: '⚡ 선착순 객관식',
+    audio: '🔊 음성 퀴즈',
     short: '✏️ 주관식',
     puzzle: '🧩 퍼즐 매칭',
+    approx: '🎯 근사치 맞추기',
   };
-  const TYPE_SHORT = { choice: '객관식', short: '주관식', puzzle: '퍼즐' };
+  const TYPE_SHORT = {
+    choice: '객관식',
+    audio: '음성',
+    short: '주관식',
+    puzzle: '퍼즐',
+    approx: '근사치',
+  };
 
   function typeBadgeClass(type) {
     return 'badge type-' + (type || 'choice');

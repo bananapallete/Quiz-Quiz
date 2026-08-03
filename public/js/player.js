@@ -20,7 +20,21 @@
     countTimer: null,
     lastResult: null,
     roster: [],
+    audios: [], // 현재 문제에서 만든 오디오 (문제가 바뀌면 전부 멈춘다)
+    myPuzzleAnswer: null, // 결과 화면에서 내 연결과 정답을 비교하려고 보관
   };
+
+  /** 재생 중인 보기 음성을 모두 멈춘다. */
+  function stopAllAudio() {
+    S.audios.forEach(function (a) {
+      try {
+        a.pause();
+        a.currentTime = 0;
+      } catch (e) {
+        /* 무시 */
+      }
+    });
+  }
 
   /* ---------------- 화면 전환 ---------------- */
 
@@ -184,8 +198,12 @@
     const wrap = el('div', 'puzzle');
     const colL = el('div', 'puzzle-col');
     const colR = el('div', 'puzzle-col');
+    // 연결선을 그릴 SVG 를 카드 위에 겹쳐 둔다. (pointer-events:none 이라 터치는 카드로 간다)
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'puzzle-lines');
     wrap.appendChild(colL);
     wrap.appendChild(colR);
+    wrap.appendChild(svg);
     container.appendChild(wrap);
 
     const leftNodes = {};
@@ -279,8 +297,66 @@
           dot.style.background = PAIR_COLORS[order % PAIR_COLORS.length];
         }
       });
+      drawLines();
       if (onChange) onChange(Object.keys(map).length, lefts.length);
     }
+
+    /** 연결된 카드 사이를 실제 선으로 이어 그린다. */
+    function drawLines() {
+      const box = wrap.getBoundingClientRect();
+      if (!box.width) return;
+      svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+      svg.setAttribute('width', box.width);
+      svg.setAttribute('height', box.height);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+      Object.keys(map).forEach(function (leftKey) {
+        const leftIdx = Number(leftKey);
+        const rightIdx = map[leftKey];
+        const ln = leftNodes[leftIdx];
+        const rn = rightNodes[rightIdx];
+        if (!ln || !rn) return;
+        const lb = ln.getBoundingClientRect();
+        const rb = rn.getBoundingClientRect();
+        const order = lefts.findIndex(function (l) {
+          return l.i === leftIdx;
+        });
+        const color = PAIR_COLORS[order % PAIR_COLORS.length];
+
+        const x1 = lb.right - box.left;
+        const y1 = lb.top + lb.height / 2 - box.top;
+        const x2 = rb.left - box.left;
+        const y2 = rb.top + rb.height / 2 - box.top;
+        const mid = (x1 + x2) / 2;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + mid + ' ' + y1 + ', ' + mid + ' ' + y2 + ', ' + x2 + ' ' + y2);
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '3');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(path);
+
+        [[x1, y1], [x2, y2]].forEach(function (pt) {
+          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          c.setAttribute('cx', pt[0]);
+          c.setAttribute('cy', pt[1]);
+          c.setAttribute('r', '4');
+          c.setAttribute('fill', color);
+          svg.appendChild(c);
+        });
+      });
+    }
+
+    // 화면 크기가 바뀌거나 이미지가 늦게 로드되면 선 위치가 어긋나므로 다시 그린다.
+    const onResize = function () {
+      drawLines();
+    };
+    window.addEventListener('resize', onResize);
+    container.querySelectorAll('img').forEach(function (img) {
+      img.addEventListener('load', onResize);
+    });
+    setTimeout(drawLines, 60);
 
     paint();
 
@@ -293,6 +369,10 @@
       matchedCount: function () {
         return Object.keys(map).length;
       },
+      redraw: drawLines,
+      destroy: function () {
+        window.removeEventListener('resize', onResize);
+      },
       reset: function () {
         Object.keys(map).forEach(function (k) {
           delete map[k];
@@ -301,6 +381,204 @@
         paint();
       },
     };
+  }
+
+  /* ---------------- 근사치: 숫자 키패드 ---------------- */
+
+  /** 계산기처럼 숫자 버튼으로 값을 입력한다. (모바일 키보드가 뜨지 않음) */
+  function buildNumberPad(body, question) {
+    let digits = '';
+    const unit = question.approxUnit || '';
+
+    const display = el('div', 'numpad-display');
+    const valueNode = el('span', 'numpad-value', '0');
+    const unitNode = el('span', 'numpad-unit', unit);
+    display.appendChild(valueNode);
+    display.appendChild(unitNode);
+    body.appendChild(display);
+
+    const pad = el('div', 'numpad');
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '←'];
+
+    function refresh() {
+      const n = digits === '' ? 0 : Number(digits);
+      valueNode.textContent = n.toLocaleString('ko-KR');
+      S.answer = digits === '' ? null : n;
+    }
+
+    keys.forEach(function (k) {
+      const b = el('button', 'numkey' + (k === '←' ? ' wide-back' : ''), k);
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        if (S.submitted) return;
+        if (k === '←') {
+          digits = digits.slice(0, -1);
+        } else {
+          // 자리수 폭주 방지 (최대 12자리)
+          if (digits.length + k.length > 12) return;
+          if (digits === '' && k === '00') return;
+          digits += k;
+          digits = digits.replace(/^0+(?=\d)/, '');
+        }
+        vibrate(8);
+        refresh();
+      });
+      pad.appendChild(b);
+    });
+    body.appendChild(pad);
+
+    const clearBtn = el('button', 'btn ghost small', '전체 지우기');
+    clearBtn.type = 'button';
+    clearBtn.style.cssText = 'margin-top:10px';
+    clearBtn.addEventListener('click', function () {
+      if (S.submitted) return;
+      digits = '';
+      refresh();
+    });
+    body.appendChild(clearBtn);
+
+    body.appendChild(
+      el('p', 'puzzle-legend', '정답에 가장 가까운 사람이 1등! 숫자 버튼으로 입력해 주세요.')
+    );
+    refresh();
+  }
+
+  /* ---------------- 근사치: 날짜 스크롤 ---------------- */
+
+  /** 년/월/일을 스크롤(휠)로 고르는 피커 */
+  function buildDateWheel(body, question) {
+    const start = parseISO(question.approxDateStart) || { y: 1900, m: 1, d: 1 };
+    const end = parseISO(question.approxDateEnd) || { y: 2100, m: 12, d: 31 };
+    const today = new Date();
+    // 초기값은 선택 가능 범위의 가운데쯤 (오늘이 범위 안이면 오늘)
+    let cur = {
+      y: Math.min(Math.max(today.getFullYear(), start.y), end.y),
+      m: today.getMonth() + 1,
+      d: today.getDate(),
+    };
+
+    const display = el('div', 'wheel-display');
+    body.appendChild(display);
+
+    const wheels = el('div', 'wheels');
+    body.appendChild(wheels);
+
+    const years = [];
+    for (let y = start.y; y <= end.y; y++) years.push(y);
+
+    const yearCol = makeWheel(years, cur.y, '년', function (v) {
+      cur.y = v;
+      rebuildDays();
+      refresh();
+    });
+    const monthCol = makeWheel(range(1, 12), cur.m, '월', function (v) {
+      cur.m = v;
+      rebuildDays();
+      refresh();
+    });
+    let dayCol = makeWheel(range(1, daysInMonth(cur.y, cur.m)), cur.d, '일', function (v) {
+      cur.d = v;
+      refresh();
+    });
+
+    wheels.appendChild(yearCol.node);
+    wheels.appendChild(monthCol.node);
+    wheels.appendChild(dayCol.node);
+
+    function rebuildDays() {
+      const max = daysInMonth(cur.y, cur.m);
+      if (cur.d > max) cur.d = max;
+      const fresh = makeWheel(range(1, max), cur.d, '일', function (v) {
+        cur.d = v;
+        refresh();
+      });
+      wheels.replaceChild(fresh.node, dayCol.node);
+      dayCol = fresh;
+    }
+
+    function refresh() {
+      const iso = toISO(cur.y, cur.m, cur.d);
+      display.textContent = cur.y + '년 ' + cur.m + '월 ' + cur.d + '일';
+      S.answer = iso;
+    }
+
+    body.appendChild(
+      el('p', 'puzzle-legend', '위아래로 굴려서 날짜를 맞춰보세요. 정답에 가까울수록 높은 점수!')
+    );
+    refresh();
+  }
+
+  /** 스크롤 스냅으로 값을 고르는 세로 휠 하나 */
+  function makeWheel(values, initial, suffix, onPick) {
+    // 가운데 표시선(mask)은 스크롤 컨테이너 "밖"에 둬야 함께 스크롤되지 않는다.
+    const wrap = el('div', 'wheel-wrap');
+    const node = el('div', 'wheel');
+    const list = el('div', 'wheel-list');
+    node.appendChild(list);
+    wrap.appendChild(node);
+    wrap.appendChild(el('div', 'wheel-mask'));
+
+    // 위아래 여백을 넣어야 첫/마지막 항목도 가운데로 올 수 있다.
+    list.appendChild(el('div', 'wheel-pad'));
+    values.forEach(function (v) {
+      const item = el('div', 'wheel-item', String(v) + suffix);
+      item.dataset.v = String(v);
+      item.addEventListener('click', function () {
+        scrollTo(values.indexOf(v));
+      });
+      list.appendChild(item);
+    });
+    list.appendChild(el('div', 'wheel-pad'));
+
+    const ITEM_H = 38;
+    function scrollTo(idx) {
+      node.scrollTop = idx * ITEM_H;
+    }
+    function highlight() {
+      const idx = Math.round(node.scrollTop / ITEM_H);
+      Array.prototype.forEach.call(list.querySelectorAll('.wheel-item'), function (n, i) {
+        n.classList.toggle('on', i === idx);
+      });
+      return values[Math.min(Math.max(idx, 0), values.length - 1)];
+    }
+
+    let settle = null;
+    node.addEventListener('scroll', function () {
+      highlight();
+      if (settle) clearTimeout(settle);
+      settle = setTimeout(function () {
+        const v = highlight();
+        if (v != null) onPick(v);
+      }, 90);
+    });
+
+    const startIdx = Math.max(0, values.indexOf(initial));
+    setTimeout(function () {
+      scrollTo(startIdx);
+      highlight();
+    }, 0);
+
+    return { node: wrap };
+  }
+
+  function range(a, b) {
+    const out = [];
+    for (let i = a; i <= b; i++) out.push(i);
+    return out;
+  }
+  function daysInMonth(y, m) {
+    return new Date(Date.UTC(y, m, 0)).getUTCDate();
+  }
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+  function toISO(y, m, d) {
+    return y + '-' + pad2(m) + '-' + pad2(d);
+  }
+  function parseISO(s) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s || ''))) return null;
+    const parts = s.split('-');
+    return { y: Number(parts[0]), m: Number(parts[1]), d: Number(parts[2]) };
   }
 
   /* ---------------- 카운트다운 ---------------- */
@@ -337,6 +615,8 @@
     S.submitted = !!opts.submitted;
     S.answer = null;
     S.puzzle = null;
+    stopAllAudio();
+    S.audios = [];
 
     showOverlay('overlay-count', false);
     showOverlay('overlay-rank', false);
@@ -361,7 +641,7 @@
     const body = $('#q-body');
     body.innerHTML = '';
 
-    if (question.type === 'choice') {
+    if (question.type === 'choice' || question.type === 'audio') {
       const list = el('div', 'options');
       (question.options || []).forEach(function (opt, order) {
         const b = el('button', 'opt');
@@ -376,6 +656,33 @@
         row.appendChild(el('span', 'k', String(order + 1)));
         row.appendChild(el('span', null, opt.text));
         b.appendChild(row);
+
+        // 음성이 붙어 있으면 재생 버튼을 넣는다. 재생 버튼을 눌러도 보기가 선택되지는 않는다.
+        if (opt.audio) {
+          const audio = new Audio(opt.audio);
+          audio.preload = 'none';
+          const playBtn = el('span', 'opt-play', '▶︎ 듣기');
+          playBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            // 다른 보기 음성은 멈추고 이 보기만 재생
+            stopAllAudio();
+            if (audio.paused) {
+              audio.play().catch(function () {
+                toast('음성을 재생하지 못했어요.', 'err');
+              });
+              playBtn.textContent = '⏸ 정지';
+            }
+          });
+          audio.addEventListener('ended', function () {
+            playBtn.textContent = '▶︎ 듣기';
+          });
+          audio.addEventListener('pause', function () {
+            playBtn.textContent = '▶︎ 듣기';
+          });
+          S.audios.push(audio);
+          b.appendChild(playBtn);
+        }
+
         b.addEventListener('click', function () {
           if (S.submitted) return;
           S.answer = opt.i;
@@ -388,6 +695,9 @@
         list.appendChild(b);
       });
       body.appendChild(list);
+    } else if (question.type === 'approx') {
+      if (question.approxMode === 'date') buildDateWheel(body, question);
+      else buildNumberPad(body, question);
     } else if (question.type === 'short') {
       const input = el('input', 'input');
       input.type = 'text';
@@ -475,32 +785,45 @@
 
   function currentAnswer() {
     if (!S.question) return null;
-    if (S.question.type === 'choice') return S.answer;
-    if (S.question.type === 'short') {
+    const t = S.question.type;
+    if (t === 'choice' || t === 'audio' || t === 'approx') return S.answer;
+    if (t === 'short') {
       const input = document.getElementById('short-answer');
       return input ? input.value : S.answer;
     }
-    if (S.question.type === 'puzzle') return S.puzzle ? S.puzzle.getAnswer() : null;
+    if (t === 'puzzle') return S.puzzle ? S.puzzle.getAnswer() : null;
     return null;
   }
 
   function submit(auto) {
     if (!S.question || S.submitted) return;
+    const t = S.question.type;
     const answer = currentAnswer();
     if (!auto) {
-      if (S.question.type === 'choice' && answer == null) {
+      if ((t === 'choice' || t === 'audio') && answer == null) {
         toast('보기를 선택해 주세요.', 'err');
         return;
       }
-      if (S.question.type === 'short' && !String(answer || '').trim()) {
+      if (t === 'short' && !String(answer || '').trim()) {
         toast('정답을 입력해 주세요.', 'err');
         return;
       }
-      if (S.question.type === 'puzzle' && S.puzzle && S.puzzle.matchedCount() < S.question.lefts.length) {
-        toast('모든 카드를 연결해 주세요.', 'err');
+      if (t === 'approx' && (answer == null || answer === '')) {
+        toast(
+          S.question.approxMode === 'date' ? '날짜를 골라 주세요.' : '숫자를 입력해 주세요.',
+          'err'
+        );
+        return;
+      }
+      // 퍼즐은 부분 점수가 있으므로 다 연결하지 않아도 제출할 수 있다.
+      if (t === 'puzzle' && S.puzzle && S.puzzle.matchedCount() === 0) {
+        toast('카드를 하나 이상 연결해 주세요.', 'err');
         return;
       }
     }
+    stopAllAudio();
+    // 결과 화면에서 "내가 연결한 짝"과 비교해 보여주기 위해 기억해 둔다.
+    if (t === 'puzzle') S.myPuzzleAnswer = Array.isArray(answer) ? answer.slice() : null;
     S.submitted = true;
     setSubmittedUI(true);
     socket.emit('answer:submit', { answer: answer }, function (res) {
@@ -526,8 +849,8 @@
     const holder = $('#r-breakdown');
     holder.innerHTML = '';
 
-    if (data.type === 'choice' && Array.isArray(data.options) && data.options.length) {
-      $('#r-breakdown-title').textContent = '전체 보기';
+    if ((data.type === 'choice' || data.type === 'audio') && Array.isArray(data.options) && data.options.length) {
+      $('#r-breakdown-title').textContent = '보기별 정답 확인';
       const list = el('div', 'bd-list');
       data.options.forEach(function (o, order) {
         const item = el('div', 'bd-item' + (o.correct ? ' correct' : ''));
@@ -539,6 +862,19 @@
           item.appendChild(img);
         }
         item.appendChild(el('span', 'tx', o.text));
+        // 음성 보기는 결과 화면에서도 다시 들어볼 수 있게
+        if (o.audio) {
+          const audio = new Audio(o.audio);
+          audio.preload = 'none';
+          const play = el('span', 'opt-play', '▶︎');
+          play.addEventListener('click', function (e) {
+            e.stopPropagation();
+            stopAllAudio();
+            audio.play().catch(function () {});
+          });
+          S.audios.push(audio);
+          item.appendChild(play);
+        }
         if (o.correct) item.appendChild(el('span', 'mark', '정답 ✓'));
         list.appendChild(item);
       });
@@ -548,13 +884,18 @@
     }
 
     if (data.type === 'puzzle' && Array.isArray(data.pairs) && data.pairs.length) {
-      $('#r-breakdown-title').textContent = '정답 짝';
+      $('#r-breakdown-title').textContent = '정답 짝 (내가 연결한 것과 비교해 보세요)';
       const list = el('div', 'bd-list');
-      data.pairs.forEach(function (p) {
-        const item = el('div', 'bd-pair');
+      const mine = Array.isArray(data.myAnswer) ? data.myAnswer : S.myPuzzleAnswer;
+      data.pairs.forEach(function (p, i) {
+        const gotIt = Array.isArray(mine) && Number(mine[i]) === i;
+        const item = el('div', 'bd-pair' + (Array.isArray(mine) ? (gotIt ? ' ok' : ' no') : ''));
         item.appendChild(sideNode(p.left));
         item.appendChild(el('span', 'bd-arrow', '→'));
         item.appendChild(sideNode(p.right));
+        if (Array.isArray(mine)) {
+          item.appendChild(el('span', 'bd-mark', gotIt ? '⭕️' : '❌'));
+        }
         list.appendChild(item);
       });
       holder.appendChild(list);
@@ -562,7 +903,33 @@
       return;
     }
 
+    if (data.type === 'approx') {
+      $('#r-breakdown-title').textContent = '근사치 결과';
+      const box = el('div', 'bd-approx');
+      const answerText =
+        data.approxMode === 'date'
+          ? String(data.approxAnswer || '')
+          : Number(data.approxAnswer || 0).toLocaleString('ko-KR') + (data.approxUnit || '');
+      box.appendChild(el('div', 'bd-approx-label', '정답'));
+      box.appendChild(el('div', 'bd-approx-value', answerText));
+      holder.appendChild(box);
+      wrap.classList.remove('hidden');
+      return;
+    }
+
     wrap.classList.add('hidden');
+  }
+
+  /** 근사치/퍼즐 결과에서 "얼마나 차이났는지"를 사람이 읽기 좋게 */
+  function diffText(type, r, approxMode, unit) {
+    if (type === 'approx' && r.distance != null) {
+      if (approxMode === 'date') return r.distance === 0 ? '정확!' : r.distance + '일 차이';
+      return r.distance === 0
+        ? '정확!'
+        : Number(r.distance).toLocaleString('ko-KR') + (unit || '') + ' 차이';
+    }
+    if (type === 'puzzle' && r.totalCount) return r.correctCount + '/' + r.totalCount + '개';
+    return '';
   }
 
   function sideNode(card) {
@@ -598,9 +965,35 @@
         })
       : null;
 
+    // 유형마다 "잘했다"의 기준이 달라서 문구를 나눠 준다.
     let emoji = '🙈';
     let title = '아쉬워요!';
-    if (mine && mine.correct) {
+    if (!mine) {
+      emoji = '⏰';
+      title = '제출하지 못했어요';
+    } else if (data.type === 'approx') {
+      if (mine.rank === 1) {
+        emoji = mine.distance === 0 ? '🎯' : '🥇';
+        title = mine.distance === 0 ? '정확히 맞혔어요!' : '1등! 가장 가까웠어요!';
+      } else if (mine.rank && mine.rank <= 4) {
+        emoji = '🎉';
+        title = mine.rank + '등! 꽤 가까웠어요';
+      } else {
+        emoji = '👏';
+        title = '참여 점수를 받았어요';
+      }
+    } else if (data.type === 'puzzle') {
+      if (mine.correct) {
+        emoji = mine.rank === 1 ? '🥇' : '🎉';
+        title = mine.rank === 1 ? '1등! 전부 맞혔어요!' : mine.rank + '등! 전부 맞혔어요';
+      } else if (mine.correctCount > 0) {
+        emoji = '👏';
+        title = mine.correctCount + '개 맞혔어요! (' + (mine.rank ? mine.rank + '등' : '순위 밖') + ')';
+      } else {
+        emoji = '😢';
+        title = '한 개도 못 맞혔어요…';
+      }
+    } else if (mine.correct) {
       if (mine.rank === 1) {
         emoji = '🥇';
         title = '1등! 가장 빨랐어요!';
@@ -611,12 +1004,9 @@
         emoji = '👏';
         title = '정답이에요!';
       }
-    } else if (mine) {
+    } else {
       emoji = '😢';
       title = '오답이에요…';
-    } else {
-      emoji = '⏰';
-      title = '제출하지 못했어요';
     }
 
     $('#r-emoji').textContent = emoji;
@@ -651,11 +1041,19 @@
       list.appendChild(el('div', 'muted center tiny', '제출한 사람이 없어요.'));
     }
     (data.results || []).forEach(function (r) {
-      const row = el('div', 'rank-row' + (r.correct && r.rank === 1 ? ' top1' : '') + (r.correct ? '' : ' wrong'));
+      const ranked = r.rank != null;
+      const row = el('div', 'rank-row' + (ranked && r.rank === 1 ? ' top1' : '') + (ranked ? '' : ' wrong'));
       if (S.me && r.nick === S.me.nick) row.classList.add('me');
-      row.appendChild(el('span', 'no', r.correct ? String(r.rank) : '✗'));
+      row.appendChild(el('span', 'no', ranked ? String(r.rank) : '✗'));
       row.appendChild(el('span', 'nm', r.nick));
-      row.appendChild(el('span', 'tm', (r.elapsed / 1000).toFixed(2) + '초'));
+      // 근사치는 "얼마나 차이났는지", 퍼즐은 "몇 개 맞혔는지"를 시간보다 먼저 보여준다.
+      const extra = diffText(data.type, r, data.approxMode, data.approxUnit);
+      if (extra) row.appendChild(el('span', 'dv', extra));
+      if (data.type === 'approx' && r.answerLabel) {
+        row.appendChild(el('span', 'tm', r.answerLabel));
+      } else {
+        row.appendChild(el('span', 'tm', (r.elapsed / 1000).toFixed(2) + '초'));
+      }
       row.appendChild(el('span', 'pt', r.gained ? '+' + r.gained : '0'));
       list.appendChild(row);
     });

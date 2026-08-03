@@ -6,8 +6,11 @@
  *
  * type
  *  - choice : 선착순 객관식
+ *  - audio  : 음성 객관식 (보기마다 음성 파일, 정답 고르기)
  *  - short  : 주관식
- *  - puzzle : 카드 매칭 퍼즐
+ *  - puzzle : 카드 매칭 퍼즐 (맞춘 개수 + 시간으로 순위)
+ *  - approx : 근사치 맞추기 (정답에 가까울수록 높은 점수)
+ *             approxMode 'number' = 가격/숫자 맞추기, 'date' = 날짜 맞추기
  */
 
 function q(index, title, subtitle, extra) {
@@ -24,26 +27,36 @@ function q(index, title, subtitle, extra) {
       hint: '',
       explanation: '',
       doublePoints: false,
+      // 객관식 / 음성
       options: ['', '', '', ''],
       answerIndex: 0,
+      // 주관식
       answers: [],
+      // 퍼즐
       pairs: [],
+      // 근사치
+      approxMode: 'number',
+      approxTarget: 0,
+      approxUnit: '',
+      approxDate: '',
+      approxDateStart: '',
+      approxDateEnd: '',
     },
     extra
   );
-  // 보기/카드는 여기서는 문자열로 짧게 적고, 실제로는 {text, image} 형태로 통일해서 내보낸다.
-  merged.options = merged.options.map((o) =>
-    typeof o === 'string' ? { text: o, image: '' } : { text: (o && o.text) || '', image: (o && o.image) || '' }
-  );
-  merged.pairs = merged.pairs.map((p) => ({
-    left: toCard(p.left),
-    right: toCard(p.right),
-  }));
+  merged.options = merged.options.map(toOption);
+  merged.pairs = merged.pairs.map((p) => ({ left: toCard(p.left), right: toCard(p.right) }));
   return merged;
 }
 
+function toOption(o) {
+  if (typeof o === 'string') return { text: o, image: '', audio: '' };
+  return { text: (o && o.text) || '', image: (o && o.image) || '', audio: (o && o.audio) || '' };
+}
+
 function toCard(c) {
-  return typeof c === 'string' ? { text: c, image: '' } : { text: (c && c.text) || '', image: (c && c.image) || '' };
+  if (typeof c === 'string') return { text: c, image: '' };
+  return { text: (c && c.text) || '', image: (c && c.image) || '' };
 }
 
 const defaultQuestions = [
@@ -54,7 +67,7 @@ const defaultQuestions = [
     answerIndex: 1,
     timeLimit: 20,
     hint: '한강이 흐르는 도시!',
-    explanation: '서울은 1394년 조선의 도읍이 된 이래 지금까지 대한민국의 수도예요.',
+    explanation: '서울은 1394년 조선의 수도가 된 이후 지금까지 대한민국의 중심 도시입니다.',
   }),
   q(1, '상식 퀴즈', '누구나 아는 그것', {
     type: 'choice',
@@ -63,6 +76,7 @@ const defaultQuestions = [
     answerIndex: 2,
     timeLimit: 20,
     hint: '윤년은 하루가 더 많아요.',
+    explanation: '평년은 365일, 4년마다 오는 윤년은 366일입니다.',
   }),
   q(2, '주관식 도전', '직접 입력하세요', {
     type: 'short',
@@ -70,6 +84,7 @@ const defaultQuestions = [
     answers: ['목성', 'jupiter'],
     timeLimit: 30,
     hint: '영어 이름은 Jupiter 입니다.',
+    explanation: '목성은 지구 지름의 약 11배로, 태양계 행성 중 가장 큽니다.',
   }),
   q(3, '짝을 찾아라', '카드 매칭 퍼즐', {
     type: 'puzzle',
@@ -82,7 +97,7 @@ const defaultQuestions = [
     ],
     timeLimit: 45,
     hint: '프랑스의 수도는 에펠탑이 있는 곳!',
-    explanation: '수도는 그 나라의 정치·행정 중심 도시예요. 서울, 도쿄, 파리, 런던 모두 각 나라의 대표 도시랍니다.',
+    explanation: '많이 맞출수록, 그리고 빨리 제출할수록 순위가 높아집니다.',
   }),
   q(4, '스피드 퀴즈', '빠른 손이 이긴다', {
     type: 'choice',
@@ -91,13 +106,16 @@ const defaultQuestions = [
     answerIndex: 2,
     timeLimit: 15,
     hint: '빨주노초파남보',
+    explanation: '한국에서는 보통 빨강·주황·노랑·초록·파랑·남색·보라 일곱 가지로 표현합니다.',
   }),
-  q(5, '영화 퀴즈', '스크린 속 한 장면', {
-    type: 'short',
-    text: '2019년 칸 황금종려상을 받은 봉준호 감독의 영화 제목은?',
-    answers: ['기생충', 'parasite'],
+  q(5, '음성 퀴즈', '소리를 듣고 맞혀요', {
+    type: 'audio',
+    text: '재생 버튼을 눌러 들어보고, 정답을 고르세요.',
+    options: ['1번 소리', '2번 소리', '3번 소리', '4번 소리'],
+    answerIndex: 0,
     timeLimit: 30,
-    hint: '영어 제목은 Parasite 입니다.',
+    hint: '가장 먼저 나온 소리예요.',
+    explanation: '문제 편집에서 보기마다 음성 파일을 첨부하면 참가자 화면에 재생 버튼이 생깁니다.',
   }),
   q(6, '음악 퀴즈', '이 노래 아시나요', {
     type: 'choice',
@@ -106,6 +124,7 @@ const defaultQuestions = [
     answerIndex: 3,
     timeLimit: 20,
     hint: '이름이 가장 길어요.',
+    explanation: '콘트라베이스는 현악기 중 가장 크고 가장 낮은 음역을 담당합니다.',
   }),
   q(7, '연결고리', '카드 매칭 퍼즐', {
     type: 'puzzle',
@@ -118,6 +137,7 @@ const defaultQuestions = [
     ],
     timeLimit: 40,
     hint: '소는 "음"으로 시작해요.',
+    explanation: '연결한 카드는 선으로 이어져 한눈에 확인할 수 있어요.',
   }),
   q(8, '역사 퀴즈', '그때 그 시절', {
     type: 'short',
@@ -125,6 +145,7 @@ const defaultQuestions = [
     answers: ['세종대왕', '세종', '세종왕'],
     timeLimit: 30,
     hint: '만원 지폐 속 인물입니다.',
+    explanation: '세종대왕이 1443년 훈민정음을 창제하고 1446년에 반포했습니다.',
   }),
   q(9, '스포츠 퀴즈', '경기장의 규칙', {
     type: 'choice',
@@ -133,6 +154,7 @@ const defaultQuestions = [
     answerIndex: 2,
     timeLimit: 20,
     hint: '골키퍼를 포함한 숫자예요.',
+    explanation: '골키퍼 1명과 필드 플레이어 10명, 모두 11명이 뜁니다.',
   }),
   q(10, '음식 퀴즈', '맛있는 문제', {
     type: 'choice',
@@ -141,6 +163,7 @@ const defaultQuestions = [
     answerIndex: 1,
     timeLimit: 15,
     hint: '"배"로 시작합니다.',
+    explanation: '가장 흔한 배추김치의 주재료는 배추입니다.',
   }),
   q(11, '두뇌 풀가동', '카드 매칭 퍼즐', {
     type: 'puzzle',
@@ -153,13 +176,17 @@ const defaultQuestions = [
     ],
     timeLimit: 40,
     hint: '수박 겉면을 떠올려 보세요.',
+    explanation: '전부 맞히지 못해도 맞힌 개수만큼 순위에 반영됩니다.',
   }),
-  q(12, '과학 퀴즈', '알쏭달쏭 원리', {
-    type: 'short',
-    text: '물의 화학식은 무엇일까요?',
-    answers: ['h2o', 'H₂O'],
-    timeLimit: 25,
-    hint: '수소 2개, 산소 1개',
+  q(12, '가격 맞추기', '근사치 승부', {
+    type: 'approx',
+    approxMode: 'number',
+    approxTarget: 4500,
+    approxUnit: '원',
+    text: '편의점 아메리카노 한 잔의 가격은 얼마일까요?',
+    timeLimit: 40,
+    hint: '4천 원대입니다.',
+    explanation: '정답에 가장 가까운 사람부터 순위가 매겨집니다.',
   }),
   q(13, '넌센스', '머리를 말랑하게', {
     type: 'choice',
@@ -168,14 +195,18 @@ const defaultQuestions = [
     answerIndex: 1,
     timeLimit: 20,
     hint: '"열"이 들어갑니다.',
+    explanation: '"열 받다"의 열 + 바다를 합친 말장난입니다.',
   }),
-  q(14, '지리 퀴즈', '세계 지도 펼치기', {
-    type: 'choice',
-    text: '세계에서 가장 긴 강은?',
-    options: ['나일강', '아마존강', '양쯔강', '미시시피강'],
-    answerIndex: 0,
-    timeLimit: 25,
-    hint: '아프리카에 있습니다.',
+  q(14, '날짜 맞추기', '근사치 승부', {
+    type: 'approx',
+    approxMode: 'date',
+    approxDate: '1988-09-17',
+    approxDateStart: '1950-01-01',
+    approxDateEnd: '2030-12-31',
+    text: '서울 올림픽 개막식이 열린 날짜는 언제일까요?',
+    timeLimit: 45,
+    hint: '1980년대 가을이었습니다.',
+    explanation: '1988년 9월 17일 잠실 올림픽 주경기장에서 개막했습니다.',
   }),
   q(15, '파이널 라운드', '마지막 한 방', {
     type: 'short',
@@ -184,6 +215,7 @@ const defaultQuestions = [
     timeLimit: 30,
     doublePoints: true,
     hint: '50보다 크고 60보다 작아요.',
+    explanation: '1+2+…+10 = 10×11÷2 = 55 입니다.',
   }),
 ];
 
@@ -200,10 +232,10 @@ const defaultSettings = {
 const practicePuzzle = {
   text: '연습! 카드를 눌러 짝을 맞춰보세요. 점수에 반영되지 않아요.',
   pairs: [
-    { left: '해', right: '☀️' },
-    { left: '달', right: '🌙' },
-    { left: '별', right: '⭐' },
-    { left: '구름', right: '☁️' },
+    { left: { text: '해', image: '' }, right: { text: '☀️', image: '' } },
+    { left: { text: '달', image: '' }, right: { text: '🌙', image: '' } },
+    { left: { text: '별', image: '' }, right: { text: '⭐', image: '' } },
+    { left: { text: '구름', image: '' }, right: { text: '☁️', image: '' } },
   ],
 };
 

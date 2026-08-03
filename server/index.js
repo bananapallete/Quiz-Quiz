@@ -36,8 +36,8 @@ if (IS_PRODUCTION && ADMIN_PASSWORD === DEFAULT_PASSWORD) {
 
 const app = express();
 const server = http.createServer(app);
-// 문제/보기 이미지를 base64 로 담아 보낼 수 있도록 기본 1MB 제한을 늘려둔다.
-const io = new Server(server, { cors: { origin: '*' }, maxHttpBufferSize: 10 * 1024 * 1024 });
+// 문제/보기 이미지와 음성 파일을 base64 로 담아 보낼 수 있도록 기본 1MB 제한을 늘려둔다.
+const io = new Server(server, { cors: { origin: '*' }, maxHttpBufferSize: 32 * 1024 * 1024 });
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/admin', (req, res) => {
@@ -124,7 +124,7 @@ function normalizeQuestions(list) {
       index: i,
       title: q.title || base.title,
       subtitle: q.subtitle != null ? q.subtitle : base.subtitle,
-      type: ['choice', 'short', 'puzzle'].includes(q.type) ? q.type : 'choice',
+      type: QUESTION_TYPES.includes(q.type) ? q.type : 'choice',
       text: q.text || '',
       image: clampImage(q.image),
       timeLimit: clampInt(q.timeLimit, 5, 600, 30),
@@ -132,13 +132,24 @@ function normalizeQuestions(list) {
       explanation: String(q.explanation || '').slice(0, 500),
       doublePoints: !!q.doublePoints,
       options: normalizeOptions(q.options),
-      answerIndex: clampInt(q.answerIndex, 0, 5, 0),
+      answerIndex: clampInt(q.answerIndex, 0, MAX_OPTIONS - 1, 0),
       answers: Array.isArray(q.answers) ? q.answers : [],
       pairs: normalizePairs(q.pairs),
+      approxMode: q.approxMode === 'date' ? 'date' : 'number',
+      approxTarget: Number.isFinite(Number(q.approxTarget)) ? Number(q.approxTarget) : 0,
+      approxUnit: String(q.approxUnit || '').slice(0, 10),
+      approxDate: normalizeDate(q.approxDate),
+      approxDateStart: normalizeDate(q.approxDateStart),
+      approxDateEnd: normalizeDate(q.approxDateEnd),
     });
   }
   return out;
 }
+
+const QUESTION_TYPES = ['choice', 'audio', 'short', 'puzzle', 'approx'];
+const MAX_OPTIONS = 8;
+/** 객관식처럼 보기 중 하나를 고르는 유형 (채점 방식이 같다) */
+const CHOICE_LIKE = ['choice', 'audio'];
 
 function clampInt(v, min, max, fallback) {
   const n = parseInt(v, 10);
@@ -146,9 +157,26 @@ function clampInt(v, min, max, fallback) {
   return Math.min(max, Math.max(min, n));
 }
 
-// 업로드 이미지는 base64 데이터 URL 로 저장한다. 압축한 사진 몇 장 정도를 넉넉히
-// 허용하되, 이상하게 큰 값이 상태 파일에 쌓이는 것은 막아둔다.
+/** 'YYYY-MM-DD' 형태만 통과시킨다. */
+function normalizeDate(v) {
+  const s = String(v || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+  const d = new Date(s + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return '';
+  return s;
+}
+
+/** 날짜 문자열을 '1970-01-01 로부터 며칠' 로 바꾼다. 날짜 근사치 계산용. */
+function dateToDays(s) {
+  const iso = normalizeDate(s);
+  if (!iso) return null;
+  return Math.round(new Date(iso + 'T00:00:00Z').getTime() / 86400000);
+}
+
+// 업로드 이미지/음성은 base64 데이터 URL 로 저장한다. 압축한 사진과 짧은 음성 정도를
+// 넉넉히 허용하되, 이상하게 큰 값이 상태 파일에 쌓이는 것은 막아둔다.
 const MAX_IMAGE_CHARS = 3_000_000;
+const MAX_AUDIO_CHARS = 4_000_000;
 
 function clampImage(v) {
   if (typeof v !== 'string') return '';
@@ -157,10 +185,29 @@ function clampImage(v) {
   return s;
 }
 
-/** 보기(options)를 {text, image} 형태로 통일한다. 예전 버전(문자열 배열)도 그대로 읽을 수 있게 둔다. */
+function clampAudio(v) {
+  if (typeof v !== 'string') return '';
+  const s = v.trim();
+  if (!s || s.length > MAX_AUDIO_CHARS) return '';
+  return s;
+}
+
+/**
+ * 보기(options)를 {text, image, audio} 형태로 통일한다.
+ * 예전 버전(문자열 배열 / image 만 있던 형태)도 그대로 읽을 수 있게 둔다.
+ */
 function normalizeOptions(options) {
-  if (!Array.isArray(options)) return ['', '', '', ''].map((t) => ({ text: t, image: '' }));
-  return options.slice(0, 6).map((o) => normalizeCard(o, 120));
+  if (!Array.isArray(options)) {
+    return ['', '', '', ''].map((t) => ({ text: t, image: '', audio: '' }));
+  }
+  return options.slice(0, MAX_OPTIONS).map((o) => {
+    if (typeof o === 'string') return { text: o.slice(0, 120), image: '', audio: '' };
+    return {
+      text: String((o && o.text) || '').slice(0, 120),
+      image: clampImage(o && o.image),
+      audio: clampAudio(o && o.audio),
+    };
+  });
 }
 
 /** 퍼즐 카드(왼쪽/오른쪽 한 장)를 {text, image} 형태로 통일한다. */
@@ -252,12 +299,20 @@ function publicQuestion(q, round) {
     timeLimit: round.timeLimit,
     doublePoints: round.doublePoints,
   };
-  if (q.type === 'choice') {
+  if (CHOICE_LIKE.includes(q.type)) {
     // 렌더링 순서가 아니라 원래 보기 번호(i)를 같이 보내야, 빈 보기를 건너뛰어도
     // 제출값이 서버가 저장한 answerIndex 와 정확히 맞는다.
     base.options = q.options
-      .map((o, i) => ({ i, text: o.text, image: o.image || '' }))
-      .filter((o) => String(o.text).trim() !== '');
+      .map((o, i) => ({ i, text: o.text, image: o.image || '', audio: o.audio || '' }))
+      .filter((o) => String(o.text).trim() !== '' || o.audio || o.image);
+  } else if (q.type === 'approx') {
+    base.approxMode = q.approxMode;
+    base.approxUnit = q.approxUnit || '';
+    if (q.approxMode === 'date') {
+      base.approxDateStart = q.approxDateStart || '1900-01-01';
+      base.approxDateEnd = q.approxDateEnd || '2100-12-31';
+    }
+    // 정답(approxTarget / approxDate)은 채점 전까지 절대 내려보내지 않는다.
   } else if (q.type === 'puzzle') {
     base.lefts = q.pairs.map((p, i) => ({ i, text: p.left.text, image: p.left.image || '' }));
     base.rights = round.rightOrder.map((i) => ({
@@ -270,23 +325,59 @@ function publicQuestion(q, round) {
 }
 
 function correctAnswerText(q) {
-  if (q.type === 'choice') return (q.options[q.answerIndex] && q.options[q.answerIndex].text) || '';
+  if (CHOICE_LIKE.includes(q.type)) {
+    const o = q.options[q.answerIndex];
+    const label = (o && o.text) || '';
+    return label || (q.answerIndex + 1) + '번';
+  }
   if (q.type === 'short') return (q.answers || []).join(' / ');
   if (q.type === 'puzzle') return q.pairs.map((p) => `${p.left.text} → ${p.right.text}`).join(', ');
+  if (q.type === 'approx') {
+    if (q.approxMode === 'date') return q.approxDate || '';
+    return formatNumber(q.approxTarget) + (q.approxUnit || '');
+  }
+  return '';
+}
+
+function formatNumber(n) {
+  return Number(n || 0).toLocaleString('ko-KR');
+}
+
+/** 결과 화면에서 "이 사람이 무엇을 냈는지" 짧게 보여주기 위한 문자열 */
+function answerLabel(q, answer) {
+  if (!q || answer == null) return '';
+  if (CHOICE_LIKE.includes(q.type)) {
+    const o = q.options[Number(answer)];
+    if (!o) return '';
+    return o.text || Number(answer) + 1 + '번';
+  }
+  if (q.type === 'short') return String(answer).slice(0, 60);
+  if (q.type === 'approx') {
+    if (q.approxMode === 'date') return normalizeDate(answer) || '';
+    const n = Number(answer);
+    return Number.isFinite(n) ? formatNumber(n) + (q.approxUnit || '') : '';
+  }
   return '';
 }
 
 /**
  * 결과 화면에서 보여줄 전체 보기/카드 해설을 만든다.
- * - choice : 1~n번 보기를 전부 보여주고 정답 표시
- * - puzzle : 짝지어진 카드를 전부 보여줌
+ * - choice/audio : 1~n번 보기를 전부 보여주고 정답 표시
+ * - puzzle       : 짝지어진 카드를 전부 보여줌
+ * - approx       : 정답 값
  */
 function resultBreakdown(q) {
-  if (q.type === 'choice') {
+  if (CHOICE_LIKE.includes(q.type)) {
     return {
       options: q.options
-        .map((o, i) => ({ i, text: o.text, image: o.image || '', correct: i === q.answerIndex }))
-        .filter((o) => o.text.trim() !== ''),
+        .map((o, i) => ({
+          i,
+          text: o.text,
+          image: o.image || '',
+          audio: o.audio || '',
+          correct: i === q.answerIndex,
+        }))
+        .filter((o) => o.text.trim() !== '' || o.audio || o.image),
     };
   }
   if (q.type === 'puzzle') {
@@ -295,6 +386,13 @@ function resultBreakdown(q) {
         left: { text: p.left.text, image: p.left.image || '' },
         right: { text: p.right.text, image: p.right.image || '' },
       })),
+    };
+  }
+  if (q.type === 'approx') {
+    return {
+      approxMode: q.approxMode,
+      approxUnit: q.approxUnit || '',
+      approxAnswer: q.approxMode === 'date' ? q.approxDate : q.approxTarget,
     };
   }
   return {};
@@ -383,6 +481,7 @@ function activeRoundPayload(player) {
         doublePoints: round.doublePoints,
         results: round.results,
         me: player ? round.results.find((r) => r.key === player.key) || null : null,
+        myAnswer: player && round.submissions[player.key] ? round.submissions[player.key].answer : null,
       },
       resultBreakdown(q)
     );
@@ -441,14 +540,24 @@ function startCountdown(questionId) {
   if (state.phase === 'countdown' || state.phase === 'question') {
     return { ok: false, error: '이미 진행 중인 문제가 있습니다.' };
   }
-  if (q.type === 'choice' && q.options.filter((o) => o && String(o.text).trim()).length < 2) {
-    return { ok: false, error: '객관식 보기를 2개 이상 입력해 주세요.' };
+  if (CHOICE_LIKE.includes(q.type)) {
+    const filled = q.options.filter((o) => o && (String(o.text).trim() || o.audio || o.image));
+    if (filled.length < 2) {
+      return { ok: false, error: '보기를 2개 이상 입력해 주세요.' };
+    }
+    const answer = q.options[q.answerIndex];
+    if (!answer || !(String(answer.text).trim() || answer.audio || answer.image)) {
+      return { ok: false, error: '정답으로 지정한 보기가 비어 있습니다.' };
+    }
   }
   if (q.type === 'short' && (!q.answers || !q.answers.length)) {
     return { ok: false, error: '주관식 정답을 1개 이상 입력해 주세요.' };
   }
   if (q.type === 'puzzle' && q.pairs.length < 2) {
     return { ok: false, error: '퍼즐 짝을 2개 이상 입력해 주세요.' };
+  }
+  if (q.type === 'approx' && q.approxMode === 'date' && !q.approxDate) {
+    return { ok: false, error: '날짜 맞추기의 정답 날짜를 입력해 주세요.' };
   }
 
   clearRoundTimers();
@@ -528,12 +637,16 @@ function submitAnswer(player, answer) {
   if (!q) return { ok: false, error: '문제를 찾을 수 없습니다.' };
 
   const elapsed = Math.min(Math.max(0, Date.now() - round.startedAt), round.timeLimit * 1000);
+  const graded = gradeAnswer(q, answer);
   round.submissions[player.key] = {
     key: player.key,
     nick: player.nick,
     answer,
     elapsed,
-    correct: gradeAnswer(q, answer),
+    correct: graded.correct,
+    correctCount: graded.correctCount,
+    totalCount: graded.totalCount,
+    distance: graded.distance,
   };
 
   io.emit('round:submitted', { count: Object.keys(round.submissions).length });
@@ -549,21 +662,55 @@ function submitAnswer(player, answer) {
   return { ok: true, elapsed };
 }
 
+/**
+ * 채점 결과를 공통 형태로 돌려준다.
+ *  correct      : 완전 정답 여부
+ *  correctCount : 퍼즐에서 맞힌 짝 수 (그 외 유형은 정답이면 1)
+ *  totalCount   : 퍼즐 짝 수
+ *  distance     : 근사치 유형에서 정답과의 차이 (숫자 / 날짜는 일수). 없으면 null
+ */
 function gradeAnswer(q, answer) {
-  if (answer == null) return false;
-  if (q.type === 'choice') {
-    return Number(answer) === Number(q.answerIndex);
+  const base = { correct: false, correctCount: 0, totalCount: 1, distance: null };
+
+  if (CHOICE_LIKE.includes(q.type)) {
+    if (answer == null) return base;
+    const ok = Number(answer) === Number(q.answerIndex);
+    return { correct: ok, correctCount: ok ? 1 : 0, totalCount: 1, distance: null };
   }
+
   if (q.type === 'short') {
     const given = normalizeAnswerText(answer);
-    if (!given) return false;
-    return (q.answers || []).some((a) => normalizeAnswerText(a) === given);
+    if (!given) return base;
+    const ok = (q.answers || []).some((a) => normalizeAnswerText(a) === given);
+    return { correct: ok, correctCount: ok ? 1 : 0, totalCount: 1, distance: null };
   }
+
   if (q.type === 'puzzle') {
-    if (!Array.isArray(answer) || answer.length !== q.pairs.length) return false;
-    return q.pairs.every((_, i) => Number(answer[i]) === i);
+    const total = q.pairs.length;
+    if (!Array.isArray(answer)) return { ...base, totalCount: total };
+    // 맞힌 짝의 개수를 센다. (전부 맞히지 못해도 개수만큼 순위에 반영)
+    let count = 0;
+    for (let i = 0; i < total; i++) {
+      if (Number(answer[i]) === i) count++;
+    }
+    return { correct: count === total && total > 0, correctCount: count, totalCount: total, distance: null };
   }
-  return false;
+
+  if (q.type === 'approx') {
+    if (q.approxMode === 'date') {
+      const guess = dateToDays(answer);
+      const target = dateToDays(q.approxDate);
+      if (guess == null || target == null) return base;
+      const dist = Math.abs(guess - target);
+      return { correct: dist === 0, correctCount: dist === 0 ? 1 : 0, totalCount: 1, distance: dist };
+    }
+    const guess = Number(answer);
+    if (!Number.isFinite(guess)) return base;
+    const dist = Math.abs(guess - Number(q.approxTarget));
+    return { correct: dist === 0, correctCount: dist === 0 ? 1 : 0, totalCount: 1, distance: dist };
+  }
+
+  return base;
 }
 
 function endRound(reason) {
@@ -577,10 +724,31 @@ function endRound(reason) {
   const multiplier = round.doublePoints ? 2 : 1;
 
   const subs = Object.values(round.submissions);
-  const correct = subs.filter((x) => x.correct).sort((a, b) => a.elapsed - b.elapsed);
+  const type = q ? q.type : 'choice';
+
+  // 유형별로 "순위에 드는 제출"과 "0점 처리할 제출"을 나눈다.
+  //  - 근사치 : 제출한 사람은 모두 순위에 든다. 정답과 가까운 순 → 같으면 빨리 낸 순
+  //  - 퍼즐   : 1개라도 맞힌 사람만 순위에 든다. 맞힌 개수 많은 순 → 같으면 빨리 낸 순
+  //  - 그 외  : 정답자만 순위에 든다. 빨리 낸 순 (선착순)
+  let ranked;
+  let unranked;
+  if (type === 'approx') {
+    ranked = subs
+      .filter((x) => x.distance != null)
+      .sort((a, b) => a.distance - b.distance || a.elapsed - b.elapsed);
+    unranked = subs.filter((x) => x.distance == null);
+  } else if (type === 'puzzle') {
+    ranked = subs
+      .filter((x) => x.correctCount > 0)
+      .sort((a, b) => b.correctCount - a.correctCount || a.elapsed - b.elapsed);
+    unranked = subs.filter((x) => x.correctCount <= 0);
+  } else {
+    ranked = subs.filter((x) => x.correct).sort((a, b) => a.elapsed - b.elapsed);
+    unranked = subs.filter((x) => !x.correct);
+  }
 
   const results = [];
-  correct.forEach((sub, i) => {
+  ranked.forEach((sub, i) => {
     let base;
     if (i === 0) base = s.scoreFirst;
     else if (i < s.scoreTopUntilRank) base = s.scoreTop;
@@ -592,14 +760,17 @@ function endRound(reason) {
       key: sub.key,
       nick: sub.nick,
       rank: i + 1,
-      correct: true,
+      correct: sub.correct,
+      correctCount: sub.correctCount,
+      totalCount: sub.totalCount,
+      distance: sub.distance,
+      answerLabel: answerLabel(q, sub.answer),
       elapsed: sub.elapsed,
       gained,
       total: player ? player.score : gained,
     });
   });
-  subs
-    .filter((x) => !x.correct)
+  unranked
     .sort((a, b) => a.elapsed - b.elapsed)
     .forEach((sub) => {
       const player = state.players[sub.key];
@@ -608,6 +779,10 @@ function endRound(reason) {
         nick: sub.nick,
         rank: null,
         correct: false,
+        correctCount: sub.correctCount,
+        totalCount: sub.totalCount,
+        distance: sub.distance,
+        answerLabel: answerLabel(q, sub.answer),
         elapsed: sub.elapsed,
         gained: 0,
         total: player ? player.score : 0,
@@ -839,7 +1014,7 @@ io.on('connection', (socket) => {
     const q = state.questions[idx];
     q.title = String(incoming.title || '').slice(0, 40) || q.title;
     q.subtitle = String(incoming.subtitle || '').slice(0, 60);
-    q.type = ['choice', 'short', 'puzzle'].includes(incoming.type) ? incoming.type : q.type;
+    q.type = QUESTION_TYPES.includes(incoming.type) ? incoming.type : q.type;
     q.text = String(incoming.text || '').slice(0, 500);
     q.image = clampImage(incoming.image);
     q.timeLimit = clampInt(incoming.timeLimit, 5, 600, q.timeLimit);
@@ -852,6 +1027,12 @@ io.on('connection', (socket) => {
       ? incoming.answers.map((a) => String(a).slice(0, 120)).filter((a) => a.trim() !== '')
       : q.answers;
     q.pairs = Array.isArray(incoming.pairs) ? normalizePairs(incoming.pairs) : q.pairs;
+    q.approxMode = incoming.approxMode === 'date' ? 'date' : 'number';
+    q.approxTarget = Number.isFinite(Number(incoming.approxTarget)) ? Number(incoming.approxTarget) : 0;
+    q.approxUnit = String(incoming.approxUnit || '').slice(0, 10);
+    q.approxDate = normalizeDate(incoming.approxDate);
+    q.approxDateStart = normalizeDate(incoming.approxDateStart);
+    q.approxDateEnd = normalizeDate(incoming.approxDateEnd);
 
     persist();
     broadcastBoard();

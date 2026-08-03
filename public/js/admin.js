@@ -102,10 +102,9 @@
     fileInput.style.cssText = 'max-width:150px;font-size:12px';
 
     // 클릭 후 Ctrl+V 로도 붙여넣을 수 있게, 포커스를 받을 수 있는 영역을 별도로 둔다.
-    const pasteZone = el('div', null, '📋 여기 클릭 후 Ctrl+V');
+    const pasteZone = el('div', 'paste-zone', '📋 여기 클릭 후 붙여넣기 (Ctrl/⌘+V)');
     pasteZone.tabIndex = 0;
-    pasteZone.style.cssText =
-      'padding:6px 10px;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--muted);cursor:text;outline-offset:2px';
+    pasteZone.title = '이미지를 복사한 뒤 여기를 클릭하고 붙여넣거나, 파일을 끌어다 놓으세요';
 
     const clearBtn = el('button', 'btn ghost small', '이미지 삭제');
     clearBtn.type = 'button';
@@ -155,6 +154,19 @@
       e.preventDefault();
       loadFile(imageItem.getAsFile());
     });
+    // 이미지 파일을 끌어다 놓아도 되도록
+    pasteZone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      pasteZone.style.borderColor = 'var(--accent)';
+    });
+    pasteZone.addEventListener('dragleave', function () {
+      pasteZone.style.borderColor = '';
+    });
+    pasteZone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      pasteZone.style.borderColor = '';
+      loadFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+    });
     clearBtn.addEventListener('click', function () {
       hidden.value = '';
       refresh();
@@ -165,6 +177,82 @@
     row.appendChild(clearBtn);
     wrap.appendChild(hidden);
     wrap.appendChild(preview);
+    wrap.appendChild(row);
+    refresh();
+    return wrap;
+  }
+
+  /**
+   * 음성 파일 업로드 위젯. 이미지와 달리 압축할 수 없으므로 용량을 미리 확인해서 막는다.
+   * (서버는 base64 기준 4,000,000자까지 허용 → 원본 약 2.9MB)
+   */
+  const MAX_AUDIO_BYTES = 2.8 * 1024 * 1024;
+
+  function buildAudioField(dataF, initialValue) {
+    const wrap = el('div');
+    wrap.style.cssText = 'margin-bottom:10px';
+
+    const hidden = el('input');
+    hidden.type = 'hidden';
+    hidden.dataset.f = dataF;
+    hidden.value = initialValue || '';
+
+    const player = el('audio');
+    player.controls = true;
+    player.preload = 'none';
+    player.style.cssText = 'display:none;width:100%;max-width:250px;margin-bottom:6px;height:34px';
+
+    const row = el('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+
+    const fileInput = el('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'audio/*';
+    fileInput.style.cssText = 'max-width:170px;font-size:12px';
+
+    const clearBtn = el('button', 'btn ghost small', '음성 삭제');
+    clearBtn.type = 'button';
+
+    function refresh() {
+      if (hidden.value) {
+        player.src = hidden.value;
+        player.style.display = 'block';
+        clearBtn.style.display = 'inline-flex';
+      } else {
+        player.removeAttribute('src');
+        player.style.display = 'none';
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    fileInput.addEventListener('change', function () {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = '';
+      if (!file) return;
+      if (file.size > MAX_AUDIO_BYTES) {
+        toast('음성 파일이 너무 큽니다. 2.8MB 이하로 잘라서 올려주세요.', 'err', 4000);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = function () {
+        toast('음성 파일을 읽지 못했어요.', 'err');
+      };
+      reader.onload = function () {
+        hidden.value = reader.result;
+        refresh();
+        toast('음성을 넣었어요 ✓', 'ok', 1200);
+      };
+      reader.readAsDataURL(file);
+    });
+    clearBtn.addEventListener('click', function () {
+      hidden.value = '';
+      refresh();
+    });
+
+    row.appendChild(fileInput);
+    row.appendChild(clearBtn);
+    wrap.appendChild(hidden);
+    wrap.appendChild(player);
     wrap.appendChild(row);
     refresh();
     return wrap;
@@ -217,6 +305,7 @@
         return x.id === q.id;
       });
       if (questionHasImage(full)) meta.appendChild(el('span', 'badge', '🖼'));
+      if (questionHasAudio(full)) meta.appendChild(el('span', 'badge', '🔊'));
       meta.appendChild(el('span', 'a-hearts', '💗 ' + (q.hearts || 0)));
       tile.appendChild(meta);
 
@@ -417,6 +506,7 @@
       summary.appendChild(sBadge);
       if (cur.doublePoints) summary.appendChild(el('span', 'badge x2', '2배'));
       if (questionHasImage(cur)) summary.appendChild(el('span', 'badge', '🖼 이미지'));
+      if (questionHasAudio(cur)) summary.appendChild(el('span', 'badge', '🔊 음성'));
     }
     refreshSummary(q);
 
@@ -433,8 +523,10 @@
     typeSel.dataset.f = 'f-type';
     [
       ['choice', '⚡ 선착순 객관식'],
+      ['audio', '🔊 음성 퀴즈'],
       ['short', '✏️ 주관식'],
       ['puzzle', '🧩 퍼즐 매칭'],
+      ['approx', '🎯 근사치 맞추기'],
     ].forEach(function (pair) {
       const o = el('option', null, pair[1]);
       o.value = pair[0];
@@ -456,35 +548,107 @@
     // 문제 이미지 (모든 유형 공통)
     body.appendChild(field('문제 이미지 (선택)', buildImageField('f-image', q.image)));
 
-    // 객관식
+    // 객관식 / 음성 — 보기 개수를 자유롭게 추가·삭제할 수 있다.
+    const MAX_OPTIONS = 8;
+    const MIN_OPTIONS = 2;
     const choiceBox = el('div');
     choiceBox.dataset.sec = 'choice';
-    const optLabel = el('label', null, '보기 (라디오를 눌러 정답 지정, 이미지는 선택)');
+    const optLabel = el('label', null, '보기 (라디오를 눌러 정답 지정)');
     optLabel.style.cssText = 'display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px';
     choiceBox.appendChild(optLabel);
-    const opts = q.options && q.options.length ? q.options : ['', '', '', ''];
-    for (let i = 0; i < 4; i++) {
-      const opt = opts[i] && typeof opts[i] === 'object' ? opts[i] : { text: opts[i] || '', image: '' };
-      const optWrap = el('div');
-      optWrap.style.cssText = 'margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--border)';
+
+    const optList = el('div');
+    choiceBox.appendChild(optList);
+
+    const optBtnRow = el('div');
+    optBtnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px';
+    const addOptBtn = el('button', 'btn ghost small', '＋ 보기 추가');
+    addOptBtn.type = 'button';
+    addOptBtn.addEventListener('click', function () {
+      if (optList.children.length >= MAX_OPTIONS) {
+        toast('보기는 최대 ' + MAX_OPTIONS + '개까지 만들 수 있어요.', 'err');
+        return;
+      }
+      optList.appendChild(buildOptionRow({ text: '', image: '', audio: '' }));
+      renumberOptions();
+    });
+    optBtnRow.appendChild(addOptBtn);
+    choiceBox.appendChild(optBtnRow);
+
+    /** 보기 한 줄 (번호 · 정답 라디오 · 텍스트 · 삭제 · 이미지 · 음성) */
+    function buildOptionRow(opt) {
+      const optWrap = el('div', 'opt-block');
+
       const line = el('div', 'opt-edit');
       const radio = el('input');
       radio.type = 'radio';
       radio.name = 'ans-' + q.id;
       radio.dataset.f = 'f-answerIndex';
-      radio.value = String(i);
-      if (Number(q.answerIndex) === i) radio.checked = true;
+      radio.title = '이 보기를 정답으로';
       const inp = el('input', 'input');
       inp.type = 'text';
       inp.dataset.f = 'f-option';
       inp.value = opt.text || '';
-      inp.placeholder = i + 1 + '번 보기';
+      const delBtn = el('button', 'btn ghost small', '✕');
+      delBtn.type = 'button';
+      delBtn.title = '이 보기 삭제';
+      delBtn.addEventListener('click', function () {
+        if (optList.children.length <= MIN_OPTIONS) {
+          toast('보기는 최소 ' + MIN_OPTIONS + '개는 있어야 해요.', 'err');
+          return;
+        }
+        const wasChecked = radio.checked;
+        optList.removeChild(optWrap);
+        renumberOptions();
+        // 정답으로 지정돼 있던 보기를 지우면 첫 번째 보기를 정답으로 되돌린다.
+        if (wasChecked) {
+          const first = optList.querySelector('[data-f="f-answerIndex"]');
+          if (first) first.checked = true;
+        }
+      });
       line.appendChild(radio);
       line.appendChild(inp);
+      line.appendChild(delBtn);
       optWrap.appendChild(line);
-      optWrap.appendChild(buildImageField('f-option-image', opt.image));
-      choiceBox.appendChild(optWrap);
+
+      const mediaRow = el('div');
+      mediaRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px';
+      const imgCol = el('div');
+      imgCol.appendChild(smallLabel('보기 이미지 (선택)'));
+      imgCol.appendChild(buildImageField('f-option-image', opt.image));
+      const audCol = el('div', 'opt-audio-col');
+      audCol.appendChild(smallLabel('보기 음성 (음성 퀴즈용)'));
+      audCol.appendChild(buildAudioField('f-option-audio', opt.audio));
+      mediaRow.appendChild(imgCol);
+      mediaRow.appendChild(audCol);
+      optWrap.appendChild(mediaRow);
+
+      return optWrap;
     }
+
+    /** 보기를 추가·삭제한 뒤 번호와 정답 라디오 값을 다시 매긴다. */
+    function renumberOptions() {
+      Array.prototype.forEach.call(optList.children, function (row, i) {
+        const radio = row.querySelector('[data-f="f-answerIndex"]');
+        const inp = row.querySelector('[data-f="f-option"]');
+        if (radio) radio.value = String(i);
+        if (inp) inp.placeholder = i + 1 + '번 보기';
+      });
+    }
+
+    const startOpts = q.options && q.options.length ? q.options : [{}, {}, {}, {}];
+    startOpts.forEach(function (raw) {
+      const opt = raw && typeof raw === 'object' ? raw : { text: raw || '', image: '', audio: '' };
+      optList.appendChild(buildOptionRow(opt));
+    });
+    renumberOptions();
+    const initialRadio = optList.querySelectorAll('[data-f="f-answerIndex"]')[Number(q.answerIndex) || 0];
+    if (initialRadio) initialRadio.checked = true;
+    else {
+      const first = optList.querySelector('[data-f="f-answerIndex"]');
+      if (first) first.checked = true;
+    }
+
     body.appendChild(choiceBox);
 
     // 주관식
@@ -547,6 +711,61 @@
     }
     body.appendChild(puzzleBox);
 
+    // 근사치 맞추기
+    const approxBox = el('div');
+    approxBox.dataset.sec = 'approx';
+
+    const modeSel = el('select', 'select');
+    modeSel.dataset.f = 'f-approxMode';
+    [
+      ['number', '💰 숫자 · 가격 맞추기 (숫자 버튼으로 입력)'],
+      ['date', '📅 날짜 맞추기 (스크롤로 조절)'],
+    ].forEach(function (pair) {
+      const o = el('option', null, pair[1]);
+      o.value = pair[0];
+      if ((q.approxMode || 'number') === pair[0]) o.selected = true;
+      modeSel.appendChild(o);
+    });
+    approxBox.appendChild(field('근사치 방식', modeSel));
+
+    // 숫자 모드
+    const numBox = el('div');
+    const numRow = el('div', 'row2');
+    const targetInput = inputNode('number', q.approxTarget != null ? q.approxTarget : 0, 'f-approxTarget');
+    targetInput.placeholder = '예) 4500';
+    const unitInput = inputNode('text', q.approxUnit || '', 'f-approxUnit');
+    unitInput.placeholder = '예) 원, 개, kg';
+    numRow.appendChild(field('정답 숫자', targetInput));
+    numRow.appendChild(field('단위 (선택)', unitInput));
+    numBox.appendChild(numRow);
+    approxBox.appendChild(numBox);
+
+    // 날짜 모드
+    const dateBox = el('div');
+    const dateAnswer = inputNode('date', q.approxDate || '', 'f-approxDate');
+    dateBox.appendChild(field('정답 날짜', dateAnswer));
+    const dateRow = el('div', 'row2');
+    dateRow.appendChild(field('선택 가능 시작일', inputNode('date', q.approxDateStart || '', 'f-approxDateStart')));
+    dateRow.appendChild(field('선택 가능 종료일', inputNode('date', q.approxDateEnd || '', 'f-approxDateEnd')));
+    dateBox.appendChild(dateRow);
+    approxBox.appendChild(dateBox);
+
+    const approxNote = el(
+      'p',
+      'tiny muted',
+      '정답에 가장 가까운 사람이 1등입니다. 선착순이 아니라 차이가 작은 순으로 순위가 정해지고, 차이가 같으면 먼저 제출한 사람이 앞섭니다.'
+    );
+    approxBox.appendChild(approxNote);
+    body.appendChild(approxBox);
+
+    function syncApproxMode() {
+      const isDate = modeSel.value === 'date';
+      numBox.style.display = isDate ? 'none' : 'block';
+      dateBox.style.display = isDate ? 'block' : 'none';
+    }
+    modeSel.addEventListener('change', syncApproxMode);
+    syncApproxMode();
+
     // 힌트 / 해설 / 2배
     const hintInput = inputNode('text', q.hint || '', 'f-hint');
     hintInput.placeholder = '종료 N초 전에 참가자에게 공개됩니다';
@@ -607,11 +826,21 @@
 
     function syncSections() {
       const t = typeSel.value;
-      choiceBox.style.display = t === 'choice' ? 'block' : 'none';
+      const choiceLike = t === 'choice' || t === 'audio';
+      choiceBox.style.display = choiceLike ? 'block' : 'none';
       shortBox.style.display = t === 'short' ? 'block' : 'none';
       puzzleBox.style.display = t === 'puzzle' ? 'block' : 'none';
+      approxBox.style.display = t === 'approx' ? 'block' : 'none';
+      // 음성 퀴즈일 때만 보기별 음성 입력칸을 강조해서 보여준다.
+      optLabel.textContent = t === 'audio'
+        ? '보기 (라디오를 눌러 정답 지정 · 보기마다 음성 파일을 첨부하세요)'
+        : '보기 (라디오를 눌러 정답 지정)';
+      $$('.opt-audio-col', choiceBox).forEach(function (n) {
+        n.style.display = t === 'audio' ? 'block' : 'none';
+      });
     }
     typeSel.addEventListener('change', syncSections);
+    addOptBtn.addEventListener('click', syncSections);
     syncSections();
 
     return details;
@@ -640,6 +869,11 @@
     return (q.pairs || []).some(function (p) {
       return p && (asCard(p.left).image || asCard(p.right).image);
     });
+  }
+
+  /** 보기 중 하나라도 음성이 붙어 있는지 */
+  function questionHasAudio(q) {
+    return !!(q && (q.options || []).some(function (o) { return o && o.audio; }));
   }
 
   function smallLabel(text) {
@@ -672,8 +906,14 @@
         return n.value;
       }
     );
+    const optionAudios = Array.prototype.map.call(
+      body.querySelectorAll('[data-f="f-option-audio"]'),
+      function (n) {
+        return n.value;
+      }
+    );
     const options = optionTexts.map(function (text, i) {
-      return { text: text, image: optionImages[i] || '' };
+      return { text: text, image: optionImages[i] || '', audio: optionAudios[i] || '' };
     });
     const checkedRadio = body.querySelector('[data-f="f-answerIndex"]:checked');
     const lefts = body.querySelectorAll('[data-f="f-pair-left"]');
@@ -709,6 +949,12 @@
       pairs: pairs.filter(function (p) {
         return p.left.text.trim() && p.right.text.trim();
       }),
+      approxMode: val('f-approxMode') || 'number',
+      approxTarget: Number(val('f-approxTarget')) || 0,
+      approxUnit: val('f-approxUnit'),
+      approxDate: val('f-approxDate'),
+      approxDateStart: val('f-approxDateStart'),
+      approxDateEnd: val('f-approxDateEnd'),
     };
   }
 
