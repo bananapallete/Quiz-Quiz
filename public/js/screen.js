@@ -287,12 +287,39 @@
     emoteLayer.show(d && d.id);
   });
 
+  // 진행자가 정한 큰 화면 글자 크기·여백을 CSS 변수로 적용한다.
+  function applyScreenStyle(st) {
+    if (!st) return;
+    const root = document.documentElement.style;
+    const map = {
+      '--sc-qtext-size': st.qTextSize,
+      '--sc-qtext-margin': st.qTextMargin,
+      '--sc-opt-size': st.optSize,
+      '--sc-answer-size': st.answerSize,
+      '--sc-answer-margin': st.answerMargin,
+      '--sc-rtitle-size': st.revealTitleSize,
+      '--sc-rtitle-margin': st.revealTitleMargin,
+      '--sc-rtext-size': st.revealTextSize,
+      '--sc-rtext-margin': st.revealTextMargin,
+    };
+    Object.keys(map).forEach(function (k) {
+      const v = Number(map[k]);
+      if (Number.isFinite(v) && v > 0) root.setProperty(k, v + 'px');
+      else root.removeProperty(k);
+    });
+  }
+
   socket.on('hello', function (d) {
     clock.sync(d && d.serverNow);
   });
 
+  socket.on('settings:update', function (d) {
+    if (d && d.screenStyle) applyScreenStyle(d.screenStyle);
+  });
+
   socket.on('state:sync', function (d) {
     clock.sync(d.serverNow);
+    if (d.settings && d.settings.screenStyle) applyScreenStyle(d.settings.screenStyle);
     S.board = d.board || [];
     const r = d.round;
     if (d.phase === 'question' && r && r.stage === 'question') {

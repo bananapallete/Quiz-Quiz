@@ -13,6 +13,7 @@
     practiceOn: false,
     liveTimer: null,
     editorOpen: null, // 팝업으로 열려 있는 문제 id
+    screenStyleLoaded: false, // 큰 화면 글자값을 서버에서 한 번 받아왔는지
   };
 
   /* ---------------- 로그인 ---------------- */
@@ -267,9 +268,10 @@
       $$('.tab').forEach(function (t) {
         t.classList.toggle('active', t === tab);
       });
-      ['run', 'settings'].forEach(function (name) {
+      ['run', 'screen', 'settings'].forEach(function (name) {
         $('#tab-' + name).classList.toggle('hidden', name !== tab.dataset.tab);
       });
+      if (tab.dataset.tab === 'screen') renderScreenPreview();
     });
   });
 
@@ -1110,6 +1112,184 @@
     return m ? { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) } : null;
   }
 
+  /* ---------------- 큰 화면 글자 크기·여백 ---------------- */
+
+  const SCREEN_DEFAULT = {
+    qTextSize: 40, qTextMargin: 12, optSize: 24,
+    answerSize: 44, answerMargin: 14,
+    revealTitleSize: 72, revealTitleMargin: 10,
+    revealTextSize: 32, revealTextMargin: 14,
+  };
+  const SCREEN_FIELDS = [
+    { key: 'qTextSize', label: '문제 문구 크기', min: 12, max: 120 },
+    { key: 'qTextMargin', label: '문제 문구 위아래 여백', min: 0, max: 80 },
+    { key: 'optSize', label: '보기 글자 크기', min: 12, max: 80 },
+    { key: 'answerSize', label: '정답 글자 크기', min: 16, max: 120 },
+    { key: 'answerMargin', label: '정답 위 여백', min: 0, max: 80 },
+    { key: 'revealTitleSize', label: '공개 제목 크기', min: 20, max: 160 },
+    { key: 'revealTitleMargin', label: '공개 제목 위아래 여백', min: 0, max: 80 },
+    { key: 'revealTextSize', label: '공개 설명 크기', min: 12, max: 100 },
+    { key: 'revealTextMargin', label: '공개 설명 위 여백', min: 0, max: 80 },
+  ];
+  const SC_VAR = {
+    qTextSize: '--sc-qtext-size', qTextMargin: '--sc-qtext-margin', optSize: '--sc-opt-size',
+    answerSize: '--sc-answer-size', answerMargin: '--sc-answer-margin',
+    revealTitleSize: '--sc-rtitle-size', revealTitleMargin: '--sc-rtitle-margin',
+    revealTextSize: '--sc-rtext-size', revealTextMargin: '--sc-rtext-margin',
+  };
+  A.screenStyle = Object.assign({}, SCREEN_DEFAULT);
+  A.scView = 'question';
+  let scBuilt = false;
+
+  function currentScreenStyle() {
+    const out = {};
+    SCREEN_FIELDS.forEach(function (f) {
+      const inp = document.getElementById('scf-' + f.key);
+      out[f.key] = inp ? clampNum(inp.value, f.min, f.max, A.screenStyle[f.key]) : A.screenStyle[f.key];
+    });
+    return out;
+  }
+  function clampNum(v, min, max, fb) {
+    const n = parseInt(v, 10);
+    if (!Number.isFinite(n)) return fb;
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function buildScreenControls() {
+    const holder = $('#scfg-controls');
+    if (!holder) return;
+    holder.innerHTML = '';
+    SCREEN_FIELDS.forEach(function (f) {
+      const row = el('div', 'scfg-row');
+      row.appendChild(el('label', null, f.label));
+      const val = A.screenStyle[f.key];
+      const slider = el('input');
+      slider.type = 'range';
+      slider.min = f.min; slider.max = f.max; slider.value = val;
+      slider.className = 'scfg-slider';
+      const num = el('input', 'input scfg-num');
+      num.type = 'number';
+      num.id = 'scf-' + f.key;
+      num.min = f.min; num.max = f.max; num.value = val;
+      function sync(src) {
+        const n = clampNum(src.value, f.min, f.max, val);
+        slider.value = n; num.value = n;
+        A.screenStyle[f.key] = n;
+        applyPreviewVars();
+      }
+      slider.addEventListener('input', function () { sync(slider); });
+      num.addEventListener('input', function () { sync(num); });
+      const unit = el('span', 'scfg-unit', 'px');
+      const box = el('div', 'scfg-inputs');
+      box.appendChild(slider);
+      box.appendChild(num);
+      box.appendChild(unit);
+      row.appendChild(box);
+      holder.appendChild(row);
+    });
+    scBuilt = true;
+  }
+
+  function applyPreviewVars() {
+    const screen = $('#scfg-screen');
+    if (!screen) return;
+    SCREEN_FIELDS.forEach(function (f) {
+      screen.style.setProperty(SC_VAR[f.key], A.screenStyle[f.key] + 'px');
+    });
+  }
+
+  function renderScreenPreview() {
+    if (!scBuilt) buildScreenControls();
+    const screen = $('#scfg-screen');
+    if (!screen) return;
+    screen.innerHTML = '';
+    if (A.scView === 'reveal') scPreviewReveal(screen);
+    else if (A.scView === 'result') scPreviewResult(screen);
+    else scPreviewQuestion(screen);
+    applyPreviewVars();
+  }
+
+  function scTop(title, type, extra) {
+    const top = el('div', 'sc-top');
+    top.appendChild(el('span', 'badge sc-badge', title));
+    top.appendChild(el('span', typeBadgeClass(type) + ' sc-badge', TYPE_LABEL[type] || ''));
+    if (extra) top.appendChild(el('span', 'badge sc-badge', extra));
+    return top;
+  }
+
+  function scPreviewQuestion(root) {
+    const head = scTop('1. 기남 · 팝스타', 'choice');
+    head.appendChild(el('div', 'sc-timer', '30초'));
+    root.appendChild(head);
+    root.appendChild(el('div', 'sc-q-text', '레이디가가의 진짜 앨범표지를 찾아주세요'));
+    const list = el('div', 'sc-options');
+    ['1번', '2번', '3번', '4번'].forEach(function (t, i) {
+      const opt = el('div', 'sc-opt');
+      opt.appendChild(el('span', 'sc-opt-k', String(i + 1)));
+      opt.appendChild(el('span', 'sc-opt-tx', t));
+      list.appendChild(opt);
+    });
+    root.appendChild(list);
+  }
+
+  function scPreviewReveal(root) {
+    const c = el('div', 'sc-center');
+    c.appendChild(el('div', 'sc-reveal-eyebrow', '곧 시작합니다'));
+    c.appendChild(el('div', 'sc-reveal-emoji', '🎯'));
+    c.appendChild(el('div', 'sc-reveal-sub', '팝스타'));
+    c.appendChild(el('h1', 'sc-reveal-title', '기남'));
+    c.appendChild(el('div', 'sc-reveal-text', '레이디가가의 진짜 앨범표지를 찾아주세요'));
+    root.appendChild(c);
+  }
+
+  function scPreviewResult(root) {
+    root.appendChild(scTop('1. 기남 · 팝스타', 'choice', '결과'));
+    root.appendChild(el('div', 'sc-q-text', '레이디가가의 진짜 앨범표지를 찾아주세요'));
+    const ans = el('div', 'sc-answer-box');
+    ans.appendChild(el('div', 'sc-answer-label', '정답'));
+    ans.appendChild(el('div', 'sc-answer-value', '4번'));
+    root.appendChild(ans);
+  }
+
+  $$('#scfg-toggle [data-scv]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      A.scView = btn.dataset.scv;
+      $$('#scfg-toggle [data-scv]').forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+      });
+      renderScreenPreview();
+    });
+  });
+
+  $('#btn-save-screen').addEventListener('click', function () {
+    const style = currentScreenStyle();
+    A.screenStyle = style;
+    socket.emit('admin:saveScreenStyle', { screenStyle: style }, function (res) {
+      if (res && res.ok) toast('큰 화면 글자를 저장했어요 ✓', 'ok');
+      else toast((res && res.error) || '저장 실패', 'err');
+    });
+  });
+
+  $('#btn-reset-screen').addEventListener('click', function () {
+    A.screenStyle = Object.assign({}, SCREEN_DEFAULT);
+    buildScreenControls();
+    renderScreenPreview();
+    toast('기본값으로 되돌렸어요. 저장을 눌러 반영하세요.', 'ok');
+  });
+
+  /** 서버에서 받은 설정으로 컨트롤을 채운다. */
+  function fillScreenStyle(st) {
+    if (!st) return;
+    A.screenStyle = Object.assign({}, SCREEN_DEFAULT, st);
+    if (scBuilt) {
+      SCREEN_FIELDS.forEach(function (f) {
+        const num = document.getElementById('scf-' + f.key);
+        if (num) num.value = A.screenStyle[f.key];
+      });
+    }
+    if (!$('#tab-screen').classList.contains('hidden')) renderScreenPreview();
+  }
+
   function field(labelText, node) {
     const wrap = el('div', 'field');
     wrap.appendChild(el('label', null, labelText));
@@ -1353,6 +1533,11 @@
     renderAdminBoard(state);
     updateLivePanel(state);
     fillSettings(state.settings);
+    // 편집 중인 값을 덮어쓰지 않도록 큰 화면 글자값은 처음 한 번만 채운다.
+    if (!A.screenStyleLoaded && state.settings) {
+      fillScreenStyle(state.settings.screenStyle);
+      A.screenStyleLoaded = true;
+    }
   });
 
   socket.on('admin:players', function (d) {

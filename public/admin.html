@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#050a1a" />
     <title>퀴즈퀴즈 · 진행자</title>
-    <link rel="stylesheet" href="/css/app.css?v=27" />
+    <link rel="stylesheet" href="/css/app.css?v=29" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>"
@@ -45,6 +45,7 @@
 
       <div class="tabs">
         <div class="tab active" data-tab="run">진행</div>
+        <div class="tab" data-tab="screen">큰 화면 글자</div>
         <div class="tab" data-tab="settings">설정</div>
       </div>
 
@@ -81,6 +82,30 @@
               카드의 <b>✏️</b>를 누르면 그 문제의 편집창이 팝업으로 열립니다.
             </p>
             <div class="admin-board" id="admin-board"></div>
+          </section>
+
+          <!-- 큰 화면 글자 탭 -->
+          <section id="tab-screen" class="hidden">
+            <p class="tiny muted" style="margin: 0 0 10px">
+              큰 화면(<b>/screen</b>)에 뜨는 글자들의 크기와 여백을 미리보며 조절하세요.
+              저장하면 지금 열려 있는 큰 화면에 바로 반영됩니다.
+            </p>
+            <div class="scfg-wrap">
+              <div class="scfg-controls" id="scfg-controls"></div>
+              <div class="scfg-preview">
+                <div class="ep-label">👀 큰 화면 미리보기</div>
+                <div class="scfg-toggle" id="scfg-toggle">
+                  <button class="btn ghost small active" data-scv="question">문제</button>
+                  <button class="btn ghost small" data-scv="reveal">공개</button>
+                  <button class="btn ghost small" data-scv="result">결과</button>
+                </div>
+                <div class="scfg-stage"><div class="scfg-screen sc-root" id="scfg-screen"></div></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px">
+              <button id="btn-save-screen" class="btn">큰 화면 글자 저장</button>
+              <button id="btn-reset-screen" class="btn ghost">기본값으로</button>
+            </div>
           </section>
 
           <!-- 설정 탭 -->
@@ -172,7 +197,7 @@
     <div class="toast-wrap" id="toasts"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/common.js?v=27"></script>
-    <script src="/js/admin.js?v=27"></script>
+    <script src="/js/common.js?v=29"></script>
+    <script src="/js/admin.js?v=29"></script>
   </body>
 </html>

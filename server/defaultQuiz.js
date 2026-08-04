@@ -209,6 +209,18 @@ const defaultSettings = {
   scoreTopUntilRank: 4,
   scoreRest: 1,
   hintBeforeSeconds: 5,
+  // 큰 화면(/screen)에 뜨는 글자들의 크기(px)와 위아래 여백(px)
+  screenStyle: {
+    qTextSize: 40,
+    qTextMargin: 12,
+    optSize: 24,
+    answerSize: 44,
+    answerMargin: 14,
+    revealTitleSize: 72,
+    revealTitleMargin: 10,
+    revealTextSize: 32,
+    revealTextMargin: 14,
+  },
 };
 
 /** 퍼즐 연습 화면에서 쓰는 샘플 (점수와 무관) */

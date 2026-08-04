@@ -2096,13 +2096,13 @@ body.has-emote-bar .toast-wrap {
   border: 1.5px solid var(--border);
 }
 .sc-q-text {
-  font-size: clamp(24px, 3.2vw, 44px);
+  font-size: var(--sc-qtext-size, clamp(24px, 3.2vw, 44px));
   font-weight: 800;
   line-height: 1.2;
   text-align: center;
   word-break: keep-all;
   overflow-wrap: anywhere;
-  margin: 10px 0;
+  margin: var(--sc-qtext-margin, 10px) 0;
 }
 .sc-q-body {
   width: 100%;
@@ -2174,7 +2174,7 @@ body.has-emote-bar .toast-wrap {
   border-radius: 10px;
 }
 .sc-opt-tx {
-  font-size: clamp(18px, 1.9vw, 26px);
+  font-size: var(--sc-opt-size, clamp(18px, 1.9vw, 26px));
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -2244,9 +2244,9 @@ body.has-emote-bar .toast-wrap {
 }
 .sc-answer-value {
   font-weight: 800;
-  font-size: clamp(26px, 3.4vw, 48px);
+  font-size: var(--sc-answer-size, clamp(26px, 3.4vw, 48px));
   line-height: 1.2;
-  margin-top: 4px;
+  margin-top: var(--sc-answer-margin, 4px);
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -2323,16 +2323,16 @@ body.has-emote-bar .toast-wrap {
   margin-top: 16px;
 }
 .sc-reveal-title {
-  font-size: clamp(40px, 7vw, 96px);
+  font-size: var(--sc-rtitle-size, clamp(40px, 7vw, 96px));
   font-weight: 800;
   line-height: 1.1;
-  margin: 8px 0;
+  margin: var(--sc-rtitle-margin, 8px) 0;
 }
 .sc-reveal-text {
   color: var(--text-secondary);
-  font-size: clamp(20px, 2.6vw, 36px);
+  font-size: var(--sc-rtext-size, clamp(20px, 2.6vw, 36px));
   font-weight: 700;
-  margin-top: 12px;
+  margin-top: var(--sc-rtext-margin, 12px);
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
@@ -2344,4 +2344,72 @@ body.has-emote-bar .toast-wrap {
   .sc-board {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------- 진행자: 큰 화면 글자 조절 패널 ---------- */
+.scfg-wrap {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .scfg-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+.scfg-controls {
+  display: grid;
+  gap: 12px;
+}
+.scfg-row label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-caption);
+  margin-bottom: 6px;
+}
+.scfg-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.scfg-slider {
+  flex: 1 1 auto;
+  accent-color: var(--blue-2);
+  min-width: 0;
+}
+.scfg-num {
+  width: 74px;
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  text-align: center;
+}
+.scfg-unit {
+  color: var(--text-caption);
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+.scfg-toggle {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+.scfg-toggle .btn.active {
+  background: var(--gradient-primary);
+  color: #fff;
+  border-color: transparent;
+}
+.scfg-stage {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  overflow: auto;
+  max-height: 540px;
+}
+/* 미리보기 안에서는 실제 화면 클래스를 쓰되, 100dvh 로 커지지 않게 눌러 둔다 */
+.scfg-screen.sc-root {
+  min-height: 320px;
+  padding: 22px 18px;
+  justify-content: flex-start;
 }

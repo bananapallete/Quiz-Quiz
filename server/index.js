@@ -449,7 +449,19 @@ function publicSettings() {
     scoreTopUntilRank: s.scoreTopUntilRank,
     scoreRest: s.scoreRest,
     hintBeforeSeconds: s.hintBeforeSeconds,
+    screenStyle: normalizeScreenStyle(s.screenStyle),
   };
+}
+
+/** 큰 화면 글자 크기·여백 설정을 안전한 범위(px)로 맞춘다. */
+function normalizeScreenStyle(v) {
+  const d = defaultSettings.screenStyle;
+  const src = v || {};
+  const out = {};
+  Object.keys(d).forEach((k) => {
+    out[k] = clampInt(src[k], 0, 400, d[k]);
+  });
+  return out;
 }
 
 /** 재접속한 참가자가 진행 중인 문제에 바로 합류할 수 있도록 */
@@ -1108,6 +1120,18 @@ io.on('connection', (socket) => {
     state.settings.scoreTopUntilRank = clampInt(s.scoreTopUntilRank, 1, 50, state.settings.scoreTopUntilRank);
     state.settings.scoreRest = clampInt(s.scoreRest, 0, 100, state.settings.scoreRest);
     state.settings.hintBeforeSeconds = clampInt(s.hintBeforeSeconds, 1, 60, state.settings.hintBeforeSeconds);
+    persist();
+    broadcastAdmin();
+    io.emit('settings:update', publicSettings());
+    respond(cb, { ok: true });
+    return undefined;
+  });
+
+  socket.on('admin:saveScreenStyle', (payload, cb) => {
+    if (!requireAdmin(cb)) return;
+    const s = payload && payload.screenStyle;
+    if (!s) return respond(cb, { ok: false, error: '잘못된 요청입니다.' });
+    state.settings.screenStyle = normalizeScreenStyle(s);
     persist();
     broadcastAdmin();
     io.emit('settings:update', publicSettings());
