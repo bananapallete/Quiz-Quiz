@@ -1123,21 +1123,22 @@
   };
   // W = 두께(100~900, 단위 없음). 나머지는 px.
   const W = { min: 100, max: 900, step: 100, unit: '' };
+  // views: 이 항목이 어느 미리보기 화면에서 실제로 쓰이는지 (그 탭에서만 컨트롤을 보여준다)
   const SCREEN_FIELDS = [
-    { key: 'qTextSize', label: '문제 문구 크기', min: 12, max: 120 },
-    { key: 'qTextMargin', label: '문제 문구 위아래 여백', min: 0, max: 80 },
-    { key: 'qTextWeight', label: '문제 문구 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
-    { key: 'optSize', label: '보기 글자 크기', min: 12, max: 80 },
-    { key: 'optWeight', label: '보기 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
-    { key: 'answerSize', label: '정답 글자 크기', min: 16, max: 120 },
-    { key: 'answerMargin', label: '정답 위 여백', min: 0, max: 80 },
-    { key: 'answerWeight', label: '정답 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
-    { key: 'revealTitleSize', label: '공개 제목 크기', min: 20, max: 160 },
-    { key: 'revealTitleMargin', label: '공개 제목 위아래 여백', min: 0, max: 80 },
-    { key: 'revealTitleWeight', label: '공개 제목 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
-    { key: 'revealTextSize', label: '공개 설명 크기', min: 12, max: 100 },
-    { key: 'revealTextMargin', label: '공개 설명 위 여백', min: 0, max: 80 },
-    { key: 'revealTextWeight', label: '공개 설명 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
+    { key: 'qTextSize', label: '문제 문구 크기', min: 12, max: 120, views: ['question', 'result'] },
+    { key: 'qTextMargin', label: '문제 문구 위아래 여백', min: 0, max: 80, views: ['question', 'result'] },
+    { key: 'qTextWeight', label: '문제 문구 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['question', 'result'] },
+    { key: 'optSize', label: '보기 글자 크기', min: 12, max: 80, views: ['question'] },
+    { key: 'optWeight', label: '보기 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['question'] },
+    { key: 'answerSize', label: '정답 글자 크기', min: 16, max: 120, views: ['result'] },
+    { key: 'answerMargin', label: '정답 위 여백', min: 0, max: 80, views: ['result'] },
+    { key: 'answerWeight', label: '정답 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['result'] },
+    { key: 'revealTitleSize', label: '공개 제목 크기', min: 20, max: 160, views: ['reveal'] },
+    { key: 'revealTitleMargin', label: '공개 제목 위아래 여백', min: 0, max: 80, views: ['reveal'] },
+    { key: 'revealTitleWeight', label: '공개 제목 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['reveal'] },
+    { key: 'revealTextSize', label: '공개 설명 크기', min: 12, max: 100, views: ['reveal'] },
+    { key: 'revealTextMargin', label: '공개 설명 위 여백', min: 0, max: 80, views: ['reveal'] },
+    { key: 'revealTextWeight', label: '공개 설명 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['reveal'] },
   ];
   const SC_VAR = {
     qTextSize: '--sc-qtext-size', qTextMargin: '--sc-qtext-margin', qTextWeight: '--sc-qtext-weight',
@@ -1172,7 +1173,10 @@
     const holder = $('#scfg-controls');
     if (!holder) return;
     holder.innerHTML = '';
-    SCREEN_FIELDS.forEach(function (f) {
+    // 지금 보고 있는 미리보기 화면(문제/공개/결과)에 실제로 쓰이는 항목만 보여준다.
+    SCREEN_FIELDS.filter(function (f) {
+      return !f.views || f.views.indexOf(A.scView) !== -1;
+    }).forEach(function (f) {
       const row = el('div', 'scfg-row');
       row.appendChild(el('label', null, f.label));
       const val = A.screenStyle[f.key];
@@ -1271,6 +1275,7 @@
       $$('#scfg-toggle [data-scv]').forEach(function (b) {
         b.classList.toggle('active', b === btn);
       });
+      buildScreenControls(); // 새 화면에 맞는 컨트롤만 다시 그린다
       renderScreenPreview();
     });
   });
