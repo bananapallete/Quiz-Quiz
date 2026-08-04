@@ -1443,8 +1443,9 @@ body.has-emote-bar .toast-wrap {
   width: 320px;
 }
 
-/* 큰 화면(TV): 화면 전체 폭을 쓰고, 스티커는 좌·우 가장자리에서 떠오른다 */
-.emote-layer.screen {
+/* 큰 화면(TV): 화면 전체 폭을 쓰고, 스티커는 좌·우 가장자리에서 떠오른다.
+   (수식 클래스 이름이 참가자 화면의 .screen 과 겹치지 않도록 emote-tv 로 둔다) */
+.emote-layer.emote-tv {
   left: 0;
   right: 0;
   width: 100%;
