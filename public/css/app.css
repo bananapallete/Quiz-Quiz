@@ -735,9 +735,10 @@ h2::before {
   margin: 12px 0 6px;
 }
 .q-image-wrap img {
-  /* 잘리지 않게 원본 비율 그대로 축소만 한다 (가로/세로 중 먼저 닿는 쪽에 맞춤) */
+  /* 잘리지 않게 원본 비율 그대로 축소만 한다 (가로/세로 중 먼저 닿는 쪽에 맞춤).
+     화면 높이에 맞춰 크게 보이도록 vh 기준으로 키웠다. */
   max-width: 100%;
-  max-height: 280px;
+  max-height: min(52vh, 440px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -786,7 +787,7 @@ h2::before {
 }
 .opt-img {
   max-width: 100%;
-  max-height: 150px;
+  max-height: 200px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1953,4 +1954,374 @@ body.has-emote-bar .toast-wrap {
   border: 1.5px solid var(--border);
   margin: 10px 0;
   word-break: break-all;
+}
+
+/* ================================================================== *
+ * 큰 화면(TV·프로젝터) 관전 화면  /screen
+ * ================================================================== */
+
+.sc-root {
+  min-height: 100dvh;
+  padding: 32px clamp(20px, 4vw, 64px) 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.sc-center {
+  text-align: center;
+  max-width: 1100px;
+  width: 100%;
+}
+.sc-hint {
+  color: var(--text-caption);
+  font-size: clamp(18px, 2.4vw, 28px);
+  font-weight: 600;
+  margin-top: 14px;
+}
+
+/* 대기 화면 보드 */
+.sc-board {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.sc-board-tile {
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  padding: 18px 12px;
+}
+.sc-board-tile.played {
+  opacity: 0.4;
+}
+.sc-board-title {
+  font-weight: 800;
+  font-size: clamp(15px, 1.6vw, 20px);
+}
+.sc-board-heart {
+  margin-top: 8px;
+  color: var(--negative);
+  font-weight: 800;
+  font-size: clamp(14px, 1.5vw, 18px);
+}
+
+/* 문제 / 결과 공통 레이아웃 */
+.sc-q {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sc-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sc-badge {
+  font-size: clamp(15px, 1.7vw, 22px);
+  padding: 8px 18px;
+}
+.sc-timer {
+  margin-left: auto;
+  font-weight: 800;
+  font-size: clamp(34px, 5vw, 68px);
+  line-height: 1;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sc-timer-bar {
+  width: 100%;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 10px 0 14px;
+}
+.sc-timer-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: var(--r-pill);
+  background: var(--gradient-primary);
+  transition: width 0.2s linear, background 0.2s ease;
+}
+.sc-timer-fill.warn {
+  background: var(--gold);
+}
+.sc-timer-fill.crit {
+  background: var(--negative);
+}
+
+/* 큰 이미지가 이 화면의 주인공 */
+.sc-image {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+}
+.sc-image img {
+  max-width: 100%;
+  max-height: 56vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--border);
+}
+.sc-q-text {
+  font-size: clamp(24px, 3.2vw, 44px);
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  margin: 10px 0;
+}
+.sc-q-body {
+  width: 100%;
+}
+.sc-foot {
+  margin-top: 12px;
+  color: var(--text-caption);
+  font-weight: 700;
+  font-size: clamp(16px, 1.8vw, 24px);
+}
+.sc-answer-hint {
+  text-align: center;
+  color: var(--text-caption);
+  font-weight: 700;
+  font-size: clamp(18px, 2.2vw, 30px);
+  padding: 24px 0;
+}
+.sc-hint-box {
+  font-size: clamp(18px, 2vw, 26px);
+  width: 100%;
+}
+
+/* 큰 화면 객관식 보기 */
+.sc-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+.sc-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  text-align: center;
+  font-weight: 800;
+  position: relative;
+}
+.sc-opt.correct {
+  border-color: var(--blue-1);
+  background: rgba(125, 222, 255, 0.12);
+}
+.sc-opt-k {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid var(--border);
+  font-size: 20px;
+  flex: 0 0 auto;
+}
+.sc-opt.correct .sc-opt-k {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: #fff;
+}
+.sc-opt-img {
+  max-width: 100%;
+  max-height: 34vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.sc-opt-tx {
+  font-size: clamp(18px, 1.9vw, 26px);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.sc-opt-audio {
+  color: var(--purple);
+  font-size: 16px;
+}
+.sc-opt-mark {
+  color: var(--blue-1);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* 큰 화면 퍼즐 */
+.sc-puzzle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 40px;
+  align-items: stretch;
+  width: 100%;
+}
+.sc-pz-col {
+  display: grid;
+  grid-auto-rows: 1fr;
+  gap: 12px;
+  min-width: 0;
+}
+.sc-pcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  text-align: center;
+  font-weight: 800;
+  font-size: clamp(16px, 1.8vw, 24px);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.sc-pcard-img {
+  max-width: 100%;
+  max-height: 22vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* 결과 정답/해설/순위 */
+.sc-answer-box {
+  width: 100%;
+  margin-top: 12px;
+  padding: 18px 24px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  text-align: center;
+}
+.sc-answer-label {
+  color: var(--text-caption);
+  font-weight: 700;
+  font-size: clamp(15px, 1.5vw, 20px);
+}
+.sc-answer-value {
+  font-weight: 800;
+  font-size: clamp(26px, 3.4vw, 48px);
+  line-height: 1.2;
+  margin-top: 4px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.sc-explain {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px 22px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  text-align: center;
+}
+.sc-explain-label {
+  color: var(--text-caption);
+  font-size: 15px;
+  font-weight: 700;
+}
+.sc-explain-text {
+  font-weight: 800;
+  font-size: clamp(18px, 2vw, 28px);
+  margin-top: 4px;
+}
+.sc-rank {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 18px;
+  display: grid;
+  gap: 8px;
+}
+.sc-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  font-size: clamp(16px, 1.8vw, 24px);
+  font-weight: 700;
+}
+.sc-rank-no {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-weight: 800;
+}
+.sc-rank-nick {
+  flex: 1 1 auto;
+}
+.sc-rank-gain {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+/* 공개 애니메이션 화면 */
+.sc-reveal-eyebrow {
+  color: var(--text-caption);
+  font-weight: 800;
+  font-size: clamp(18px, 2vw, 28px);
+  margin-bottom: 16px;
+}
+.sc-reveal-emoji {
+  font-size: clamp(90px, 16vw, 200px);
+  line-height: 1;
+}
+.sc-reveal-sub {
+  color: var(--text-caption);
+  font-weight: 700;
+  font-size: clamp(18px, 2vw, 28px);
+  margin-top: 16px;
+}
+.sc-reveal-title {
+  font-size: clamp(40px, 7vw, 96px);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 8px 0;
+}
+.sc-reveal-text {
+  color: var(--text-secondary);
+  font-size: clamp(20px, 2.6vw, 36px);
+  font-weight: 700;
+  margin-top: 12px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 좁은 화면(세로 폰으로 큰 화면 페이지를 열었을 때)에서는 보기·퍼즐을 1열로 */
+@media (max-width: 640px) {
+  .sc-options,
+  .sc-board {
+    grid-template-columns: 1fr;
+  }
 }

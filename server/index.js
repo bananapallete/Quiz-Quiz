@@ -52,6 +52,11 @@ app.get('/admin', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
 });
+// 큰 화면(TV·프로젝터)용 관전 화면. 현재 출제된 문제의 이미지를 크게 보여준다.
+app.get('/screen', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(__dirname, '..', 'public', 'screen.html'));
+});
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 /* ------------------------------------------------------------------ *
