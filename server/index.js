@@ -140,6 +140,7 @@ function normalizeQuestions(list) {
       subtitle: q.subtitle != null ? q.subtitle : base.subtitle,
       type: QUESTION_TYPES.includes(q.type) ? q.type : 'choice',
       text: q.text || '',
+      cardText: String(q.cardText || '').slice(0, 200),
       image: clampImage(q.image),
       cardImage: clampImage(q.cardImage),
       timeLimit: clampInt(q.timeLimit, 5, 600, 30),
@@ -602,7 +603,7 @@ function revealPayload(q) {
     subtitle: q.subtitle || '',
     type: q.type,
     image: q.cardImage || q.image || '',
-    text: q.text || '',
+    text: q.cardText || q.text || '',
     hearts: state.hearts[q.id] || 0,
     serverNow: Date.now(),
   };
@@ -1055,6 +1056,7 @@ io.on('connection', (socket) => {
     q.subtitle = String(incoming.subtitle || '').slice(0, 60);
     q.type = QUESTION_TYPES.includes(incoming.type) ? incoming.type : q.type;
     q.text = String(incoming.text || '').slice(0, 500);
+    q.cardText = String(incoming.cardText || '').slice(0, 200);
     q.image = clampImage(incoming.image);
     q.cardImage = clampImage(incoming.cardImage);
     q.timeLimit = clampInt(incoming.timeLimit, 5, 600, q.timeLimit);

@@ -22,6 +22,8 @@ function q(index, title, subtitle, extra) {
       subtitle,
       type: 'choice',
       text: '',
+      // 출제할 때 뒤집히는 카드 하단에 보여줄 짧은 설명. 비우면 text 를 대신 쓴다.
+      cardText: '',
       image: '',
       timeLimit: 30,
       hint: '',

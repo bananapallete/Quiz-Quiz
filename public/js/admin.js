@@ -587,6 +587,14 @@
     ta.placeholder = '참가자에게 보여줄 문제 내용';
     body.appendChild(field('문제 내용', ta));
 
+    // 출제할 때 뒤집히는 카드 하단에 보여줄 짧은 설명. 비우면 위의 문제 내용을 대신 쓴다.
+    const cardTa = el('textarea', 'textarea');
+    cardTa.dataset.f = 'f-cardText';
+    cardTa.value = q.cardText || '';
+    cardTa.placeholder = '비워두면 위의 문제 내용이 카드에 그대로 나와요';
+    cardTa.style.minHeight = '56px';
+    body.appendChild(field('카드 설명 (출제할 때 뒤집히는 카드 하단 문구)', cardTa));
+
     // 문제 이미지 (모든 유형 공통)
     body.appendChild(field('문제 이미지 (선택)', buildImageField('f-image', q.image)));
 
@@ -1189,6 +1197,7 @@
       subtitle: val('f-subtitle'),
       type: val('f-type'),
       text: val('f-text'),
+      cardText: val('f-cardText'),
       image: val('f-image'),
       cardImage: val('f-cardImage'),
       timeLimit: parseInt(val('f-timeLimit'), 10) || q.timeLimit,
