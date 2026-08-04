@@ -1115,28 +1115,41 @@
   /* ---------------- 큰 화면 글자 크기·여백 ---------------- */
 
   const SCREEN_DEFAULT = {
-    qTextSize: 40, qTextMargin: 12, optSize: 24,
-    answerSize: 44, answerMargin: 14,
-    revealTitleSize: 72, revealTitleMargin: 10,
-    revealTextSize: 32, revealTextMargin: 14,
+    qTextSize: 40, qTextMargin: 12, qTextWeight: 800,
+    optSize: 24, optWeight: 800,
+    answerSize: 44, answerMargin: 14, answerWeight: 800,
+    revealTitleSize: 72, revealTitleMargin: 10, revealTitleWeight: 800,
+    revealTextSize: 32, revealTextMargin: 14, revealTextWeight: 700,
   };
+  // W = 두께(100~900, 단위 없음). 나머지는 px.
+  const W = { min: 100, max: 900, step: 100, unit: '' };
   const SCREEN_FIELDS = [
     { key: 'qTextSize', label: '문제 문구 크기', min: 12, max: 120 },
     { key: 'qTextMargin', label: '문제 문구 위아래 여백', min: 0, max: 80 },
+    { key: 'qTextWeight', label: '문제 문구 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
     { key: 'optSize', label: '보기 글자 크기', min: 12, max: 80 },
+    { key: 'optWeight', label: '보기 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
     { key: 'answerSize', label: '정답 글자 크기', min: 16, max: 120 },
     { key: 'answerMargin', label: '정답 위 여백', min: 0, max: 80 },
+    { key: 'answerWeight', label: '정답 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
     { key: 'revealTitleSize', label: '공개 제목 크기', min: 20, max: 160 },
     { key: 'revealTitleMargin', label: '공개 제목 위아래 여백', min: 0, max: 80 },
+    { key: 'revealTitleWeight', label: '공개 제목 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
     { key: 'revealTextSize', label: '공개 설명 크기', min: 12, max: 100 },
     { key: 'revealTextMargin', label: '공개 설명 위 여백', min: 0, max: 80 },
+    { key: 'revealTextWeight', label: '공개 설명 두께', min: W.min, max: W.max, step: W.step, unit: W.unit },
   ];
   const SC_VAR = {
-    qTextSize: '--sc-qtext-size', qTextMargin: '--sc-qtext-margin', optSize: '--sc-opt-size',
-    answerSize: '--sc-answer-size', answerMargin: '--sc-answer-margin',
-    revealTitleSize: '--sc-rtitle-size', revealTitleMargin: '--sc-rtitle-margin',
-    revealTextSize: '--sc-rtext-size', revealTextMargin: '--sc-rtext-margin',
+    qTextSize: '--sc-qtext-size', qTextMargin: '--sc-qtext-margin', qTextWeight: '--sc-qtext-weight',
+    optSize: '--sc-opt-size', optWeight: '--sc-opt-weight',
+    answerSize: '--sc-answer-size', answerMargin: '--sc-answer-margin', answerWeight: '--sc-answer-weight',
+    revealTitleSize: '--sc-rtitle-size', revealTitleMargin: '--sc-rtitle-margin', revealTitleWeight: '--sc-rtitle-weight',
+    revealTextSize: '--sc-rtext-size', revealTextMargin: '--sc-rtext-margin', revealTextWeight: '--sc-rtext-weight',
   };
+  function scUnit(key) {
+    const f = SCREEN_FIELDS.find(function (x) { return x.key === key; });
+    return f && f.unit != null ? f.unit : 'px';
+  }
   A.screenStyle = Object.assign({}, SCREEN_DEFAULT);
   A.scView = 'question';
   let scBuilt = false;
@@ -1165,12 +1178,12 @@
       const val = A.screenStyle[f.key];
       const slider = el('input');
       slider.type = 'range';
-      slider.min = f.min; slider.max = f.max; slider.value = val;
+      slider.min = f.min; slider.max = f.max; slider.step = f.step || 1; slider.value = val;
       slider.className = 'scfg-slider';
       const num = el('input', 'input scfg-num');
       num.type = 'number';
       num.id = 'scf-' + f.key;
-      num.min = f.min; num.max = f.max; num.value = val;
+      num.min = f.min; num.max = f.max; num.step = f.step || 1; num.value = val;
       function sync(src) {
         const n = clampNum(src.value, f.min, f.max, val);
         slider.value = n; num.value = n;
@@ -1179,7 +1192,7 @@
       }
       slider.addEventListener('input', function () { sync(slider); });
       num.addEventListener('input', function () { sync(num); });
-      const unit = el('span', 'scfg-unit', 'px');
+      const unit = el('span', 'scfg-unit', f.unit === '' ? '두께' : 'px');
       const box = el('div', 'scfg-inputs');
       box.appendChild(slider);
       box.appendChild(num);
@@ -1194,7 +1207,8 @@
     const screen = $('#scfg-screen');
     if (!screen) return;
     SCREEN_FIELDS.forEach(function (f) {
-      screen.style.setProperty(SC_VAR[f.key], A.screenStyle[f.key] + 'px');
+      const unit = f.unit != null ? f.unit : 'px';
+      screen.style.setProperty(SC_VAR[f.key], A.screenStyle[f.key] + unit);
     });
   }
 
@@ -1542,6 +1556,10 @@
 
   socket.on('admin:players', function (d) {
     renderPlayers(d.count, d.players);
+  });
+
+  socket.on('admin:notice', function (d) {
+    if (d && d.msg) toast(d.msg, d.kind || 'ok');
   });
 
   const emoteLayer = QQ.createEmoteLayer($('#emote-layer'));

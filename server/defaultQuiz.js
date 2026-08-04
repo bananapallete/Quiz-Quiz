@@ -209,17 +209,22 @@ const defaultSettings = {
   scoreTopUntilRank: 4,
   scoreRest: 1,
   hintBeforeSeconds: 5,
-  // 큰 화면(/screen)에 뜨는 글자들의 크기(px)와 위아래 여백(px)
+  // 큰 화면(/screen)에 뜨는 글자들의 크기(px)·위아래 여백(px)·두께(100~900)
   screenStyle: {
     qTextSize: 40,
     qTextMargin: 12,
+    qTextWeight: 800,
     optSize: 24,
+    optWeight: 800,
     answerSize: 44,
     answerMargin: 14,
+    answerWeight: 800,
     revealTitleSize: 72,
     revealTitleMargin: 10,
+    revealTitleWeight: 800,
     revealTextSize: 32,
     revealTextMargin: 14,
+    revealTextWeight: 700,
   },
 };
 

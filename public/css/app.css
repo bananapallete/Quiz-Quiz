@@ -2097,7 +2097,7 @@ body.has-emote-bar .toast-wrap {
 }
 .sc-q-text {
   font-size: var(--sc-qtext-size, clamp(24px, 3.2vw, 44px));
-  font-weight: 800;
+  font-weight: var(--sc-qtext-weight, 800);
   line-height: 1.2;
   text-align: center;
   word-break: keep-all;
@@ -2175,6 +2175,7 @@ body.has-emote-bar .toast-wrap {
 }
 .sc-opt-tx {
   font-size: var(--sc-opt-size, clamp(18px, 1.9vw, 26px));
+  font-weight: var(--sc-opt-weight, 800);
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
@@ -2243,7 +2244,7 @@ body.has-emote-bar .toast-wrap {
   font-size: clamp(15px, 1.5vw, 20px);
 }
 .sc-answer-value {
-  font-weight: 800;
+  font-weight: var(--sc-answer-weight, 800);
   font-size: var(--sc-answer-size, clamp(26px, 3.4vw, 48px));
   line-height: 1.2;
   margin-top: var(--sc-answer-margin, 4px);
@@ -2324,14 +2325,14 @@ body.has-emote-bar .toast-wrap {
 }
 .sc-reveal-title {
   font-size: var(--sc-rtitle-size, clamp(40px, 7vw, 96px));
-  font-weight: 800;
+  font-weight: var(--sc-rtitle-weight, 800);
   line-height: 1.1;
   margin: var(--sc-rtitle-margin, 8px) 0;
 }
 .sc-reveal-text {
   color: var(--text-secondary);
   font-size: var(--sc-rtext-size, clamp(20px, 2.6vw, 36px));
-  font-weight: 700;
+  font-weight: var(--sc-rtext-weight, 700);
   margin-top: var(--sc-rtext-margin, 12px);
   max-width: 900px;
   margin-left: auto;

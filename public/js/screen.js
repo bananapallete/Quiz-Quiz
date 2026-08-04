@@ -291,21 +291,27 @@
   function applyScreenStyle(st) {
     if (!st) return;
     const root = document.documentElement.style;
-    const map = {
-      '--sc-qtext-size': st.qTextSize,
-      '--sc-qtext-margin': st.qTextMargin,
-      '--sc-opt-size': st.optSize,
-      '--sc-answer-size': st.answerSize,
-      '--sc-answer-margin': st.answerMargin,
-      '--sc-rtitle-size': st.revealTitleSize,
-      '--sc-rtitle-margin': st.revealTitleMargin,
-      '--sc-rtext-size': st.revealTextSize,
-      '--sc-rtext-margin': st.revealTextMargin,
-    };
-    Object.keys(map).forEach(function (k) {
-      const v = Number(map[k]);
-      if (Number.isFinite(v) && v > 0) root.setProperty(k, v + 'px');
-      else root.removeProperty(k);
+    // [CSS 변수, 값, 단위]. 두께(weight)는 단위 없는 숫자다.
+    const rows = [
+      ['--sc-qtext-size', st.qTextSize, 'px'],
+      ['--sc-qtext-margin', st.qTextMargin, 'px'],
+      ['--sc-qtext-weight', st.qTextWeight, ''],
+      ['--sc-opt-size', st.optSize, 'px'],
+      ['--sc-opt-weight', st.optWeight, ''],
+      ['--sc-answer-size', st.answerSize, 'px'],
+      ['--sc-answer-margin', st.answerMargin, 'px'],
+      ['--sc-answer-weight', st.answerWeight, ''],
+      ['--sc-rtitle-size', st.revealTitleSize, 'px'],
+      ['--sc-rtitle-margin', st.revealTitleMargin, 'px'],
+      ['--sc-rtitle-weight', st.revealTitleWeight, ''],
+      ['--sc-rtext-size', st.revealTextSize, 'px'],
+      ['--sc-rtext-margin', st.revealTextMargin, 'px'],
+      ['--sc-rtext-weight', st.revealTextWeight, ''],
+    ];
+    rows.forEach(function (r) {
+      const v = Number(r[1]);
+      if (Number.isFinite(v) && v > 0) root.setProperty(r[0], v + r[2]);
+      else root.removeProperty(r[0]);
     });
   }
 

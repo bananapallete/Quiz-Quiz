@@ -94,6 +94,24 @@ cloudflared tunnel --url http://localhost:3000
 
 > 무료 플랜 조건은 서비스마다 자주 바뀌니, 배포 전에 해당 사이트에서 현재 정책을 확인해 주세요.
 
+### (선택) 저장 내용을 GitHub 에 자동 커밋하기
+
+Render 처럼 디스크가 초기화되는 곳에서는 진행자 콘솔에서 저장한 문제·사진·설정·
+큰 화면 글자 등이 재배포 때 사라질 수 있습니다. 아래 환경변수를 설정하면 저장할 때마다
+서버가 상태(`data/state.json`)를 **GitHub 배포 브랜치에 자동 커밋**해, 재배포해도 그대로
+복원됩니다. (설정하지 않으면 이 기능은 꺼진 채로 아무 일도 하지 않습니다.)
+
+| 환경변수 | 설명 |
+| --- | --- |
+| `GITHUB_TOKEN` | 저장소 **Contents: write** 권한 토큰 (fine-grained PAT 권장) |
+| `GITHUB_REPO` | `owner/repo` (예: `bananapallete/Quiz-Quiz`) |
+| `GITHUB_BRANCH` | 커밋할 브랜치 (배포 중인 브랜치) |
+| `GITHUB_STATE_PATH` | (선택) 저장 경로, 기본 `data/state.json` |
+| `GITHUB_SYNC_DEBOUNCE_MS` | (선택) 연속 저장을 묶는 지연(ms), 기본 `4000` |
+
+> 배포 브랜치에 커밋하므로, 자동 배포를 켜 두면 저장할 때마다 재배포가 일어날 수 있습니다.
+> 파티 진행 중에는 저장을 자주 하지 않는 것이 좋습니다.
+
 ---
 
 ## 진행 흐름

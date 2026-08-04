@@ -7,6 +7,7 @@ const express = require('express');
 const { Server } = require('socket.io');
 
 const store = require('./store');
+const githubSync = require('./githubSync');
 const { defaultQuestions, defaultSettings, practicePuzzle } = require('./defaultQuiz');
 
 const PORT = process.env.PORT || 3000;
@@ -38,6 +39,14 @@ const app = express();
 const server = http.createServer(app);
 // 문제/보기 이미지와 음성 파일을 base64 로 담아 보낼 수 있도록 기본 1MB 제한을 늘려둔다.
 const io = new Server(server, { cors: { origin: '*' }, maxHttpBufferSize: 32 * 1024 * 1024 });
+
+// GitHub 자동 저장 결과를 진행자 화면에 알린다.
+githubSync.onResult((ok, detail) => {
+  io.to('admins').emit('admin:notice', {
+    kind: ok ? 'ok' : 'err',
+    msg: ok ? '깃허브에도 저장했어요 ✓' : '깃허브 저장 실패: ' + detail,
+  });
+});
 
 app.use(
   express.static(path.join(__dirname, '..', 'public'), {
@@ -88,7 +97,7 @@ function clearRoundTimers() {
  * ------------------------------------------------------------------ */
 
 function persist() {
-  store.save({
+  const snapshot = {
     settings: state.settings,
     questions: state.questions,
     hearts: state.hearts,
@@ -99,7 +108,10 @@ function persist() {
       score: p.score,
       joinedAt: p.joinedAt,
     })),
-  });
+  };
+  store.save(snapshot);
+  // 설정돼 있으면 GitHub 배포 브랜치에도 자동 커밋 (없으면 아무 일도 안 함)
+  githubSync.schedule(JSON.stringify(snapshot, null, 2));
 }
 
 function restore() {
@@ -459,7 +471,8 @@ function normalizeScreenStyle(v) {
   const src = v || {};
   const out = {};
   Object.keys(d).forEach((k) => {
-    out[k] = clampInt(src[k], 0, 400, d[k]);
+    // 크기·여백(px)과 두께(100~900)를 모두 담을 수 있게 넉넉히 자른다
+    out[k] = clampInt(src[k], 0, 900, d[k]);
   });
   return out;
 }
