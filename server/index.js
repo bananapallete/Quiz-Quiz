@@ -8,6 +8,7 @@ const { Server } = require('socket.io');
 
 const store = require('./store');
 const githubSync = require('./githubSync');
+const screenSpec = require('../public/js/screenSpec');
 const { defaultQuestions, defaultSettings, practicePuzzle } = require('./defaultQuiz');
 
 const PORT = process.env.PORT || 3000;
@@ -465,16 +466,9 @@ function publicSettings() {
   };
 }
 
-/** 큰 화면 글자 크기·여백 설정을 안전한 범위(px)로 맞춘다. */
+/** 큰 화면 요소별 표시/크기/여백/두께 설정을 규격에 맞게 정리한다. */
 function normalizeScreenStyle(v) {
-  const d = defaultSettings.screenStyle;
-  const src = v || {};
-  const out = {};
-  Object.keys(d).forEach((k) => {
-    // 크기·여백(px)과 두께(100~900)를 모두 담을 수 있게 넉넉히 자른다
-    out[k] = clampInt(src[k], 0, 900, d[k]);
-  });
-  return out;
+  return screenSpec.normalize(v);
 }
 
 /** 재접속한 참가자가 진행 중인 문제에 바로 합류할 수 있도록 */

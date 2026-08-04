@@ -1112,56 +1112,28 @@
     return m ? { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) } : null;
   }
 
-  /* ---------------- 큰 화면 글자 크기·여백 ---------------- */
+  /* ---------------- 큰 화면 요소별 표시·크기·여백·두께 ---------------- */
 
-  const SCREEN_DEFAULT = {
-    qTextSize: 40, qTextMargin: 12, qTextWeight: 800,
-    optSize: 24, optWeight: 800,
-    answerSize: 44, answerMargin: 14, answerWeight: 800,
-    revealTitleSize: 72, revealTitleMargin: 10, revealTitleWeight: 800,
-    revealTextSize: 32, revealTextMargin: 14, revealTextWeight: 700,
+  const SCREEN = window.QQ_SCREEN;
+  // 프로퍼티별 표시 정보
+  const PROP_META = {
+    size: { label: '크기', suffix: 'px', step: 1 },
+    margin: { label: '여백', suffix: 'px', step: 1 },
+    weight: { label: '두께', suffix: '', step: 100 },
+    maxH: { label: '이미지 높이', suffix: 'vh', step: 1 },
   };
-  // W = 두께(100~900, 단위 없음). 나머지는 px.
-  const W = { min: 100, max: 900, step: 100, unit: '' };
-  // views: 이 항목이 어느 미리보기 화면에서 실제로 쓰이는지 (그 탭에서만 컨트롤을 보여준다)
-  const SCREEN_FIELDS = [
-    { key: 'qTextSize', label: '문제 문구 크기', min: 12, max: 120, views: ['question', 'result'] },
-    { key: 'qTextMargin', label: '문제 문구 위아래 여백', min: 0, max: 80, views: ['question', 'result'] },
-    { key: 'qTextWeight', label: '문제 문구 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['question', 'result'] },
-    { key: 'optSize', label: '보기 글자 크기', min: 12, max: 80, views: ['question'] },
-    { key: 'optWeight', label: '보기 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['question'] },
-    { key: 'answerSize', label: '정답 글자 크기', min: 16, max: 120, views: ['result'] },
-    { key: 'answerMargin', label: '정답 위 여백', min: 0, max: 80, views: ['result'] },
-    { key: 'answerWeight', label: '정답 글자 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['result'] },
-    { key: 'revealTitleSize', label: '공개 제목 크기', min: 20, max: 160, views: ['reveal'] },
-    { key: 'revealTitleMargin', label: '공개 제목 위아래 여백', min: 0, max: 80, views: ['reveal'] },
-    { key: 'revealTitleWeight', label: '공개 제목 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['reveal'] },
-    { key: 'revealTextSize', label: '공개 설명 크기', min: 12, max: 100, views: ['reveal'] },
-    { key: 'revealTextMargin', label: '공개 설명 위 여백', min: 0, max: 80, views: ['reveal'] },
-    { key: 'revealTextWeight', label: '공개 설명 두께', min: W.min, max: W.max, step: W.step, unit: W.unit, views: ['reveal'] },
-  ];
-  const SC_VAR = {
-    qTextSize: '--sc-qtext-size', qTextMargin: '--sc-qtext-margin', qTextWeight: '--sc-qtext-weight',
-    optSize: '--sc-opt-size', optWeight: '--sc-opt-weight',
-    answerSize: '--sc-answer-size', answerMargin: '--sc-answer-margin', answerWeight: '--sc-answer-weight',
-    revealTitleSize: '--sc-rtitle-size', revealTitleMargin: '--sc-rtitle-margin', revealTitleWeight: '--sc-rtitle-weight',
-    revealTextSize: '--sc-rtext-size', revealTextMargin: '--sc-rtext-margin', revealTextWeight: '--sc-rtext-weight',
-  };
-  function scUnit(key) {
-    const f = SCREEN_FIELDS.find(function (x) { return x.key === key; });
-    return f && f.unit != null ? f.unit : 'px';
-  }
-  A.screenStyle = Object.assign({}, SCREEN_DEFAULT);
+  // 미리보기에서 이미지 요소를 눈에 보이게 할 샘플 그림 (조절 효과 확인용)
+  const SC_SAMPLE_IMG =
+    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'>" +
+    "<rect width='320' height='200' rx='16' fill='%23182a5c'/>" +
+    "<text x='160' y='110' font-size='28' fill='%239eb8eb' text-anchor='middle' font-family='sans-serif'>이미지</text></svg>";
+
+  A.screenStyle = SCREEN.defaults();
   A.scView = 'question';
   let scBuilt = false;
 
-  function currentScreenStyle() {
-    const out = {};
-    SCREEN_FIELDS.forEach(function (f) {
-      const inp = document.getElementById('scf-' + f.key);
-      out[f.key] = inp ? clampNum(inp.value, f.min, f.max, A.screenStyle[f.key]) : A.screenStyle[f.key];
-    });
-    return out;
+  function scGroup() {
+    return SCREEN.SPEC.find(function (g) { return g.view === A.scView; });
   }
   function clampNum(v, min, max, fb) {
     const n = parseInt(v, 10);
@@ -1173,47 +1145,69 @@
     const holder = $('#scfg-controls');
     if (!holder) return;
     holder.innerHTML = '';
-    // 지금 보고 있는 미리보기 화면(문제/공개/결과)에 실제로 쓰이는 항목만 보여준다.
-    SCREEN_FIELDS.filter(function (f) {
-      return !f.views || f.views.indexOf(A.scView) !== -1;
-    }).forEach(function (f) {
-      const row = el('div', 'scfg-row');
-      row.appendChild(el('label', null, f.label));
-      const val = A.screenStyle[f.key];
-      const slider = el('input');
-      slider.type = 'range';
-      slider.min = f.min; slider.max = f.max; slider.step = f.step || 1; slider.value = val;
-      slider.className = 'scfg-slider';
-      const num = el('input', 'input scfg-num');
-      num.type = 'number';
-      num.id = 'scf-' + f.key;
-      num.min = f.min; num.max = f.max; num.step = f.step || 1; num.value = val;
-      function sync(src) {
-        const n = clampNum(src.value, f.min, f.max, val);
-        slider.value = n; num.value = n;
-        A.screenStyle[f.key] = n;
-        applyPreviewVars();
-      }
-      slider.addEventListener('input', function () { sync(slider); });
-      num.addEventListener('input', function () { sync(num); });
-      const unit = el('span', 'scfg-unit', f.unit === '' ? '두께' : 'px');
-      const box = el('div', 'scfg-inputs');
-      box.appendChild(slider);
-      box.appendChild(num);
-      box.appendChild(unit);
-      row.appendChild(box);
-      holder.appendChild(row);
+    const group = scGroup();
+    if (!group) return;
+    group.items.forEach(function (it) {
+      const vs = A.screenStyle[A.scView][it.key];
+      const block = el('div', 'scfg-item' + (vs.show === 0 ? ' off' : ''));
+
+      // 머리말: 항목 이름 + "표시" 체크박스
+      const head = el('div', 'scfg-item-head');
+      head.appendChild(el('span', 'scfg-item-label', it.label));
+      const showLbl = el('label', 'scfg-show');
+      const chk = el('input');
+      chk.type = 'checkbox';
+      chk.id = 'scf-' + A.scView + '-' + it.key + '-show';
+      chk.checked = vs.show !== 0;
+      chk.addEventListener('change', function () {
+        vs.show = chk.checked ? 1 : 0;
+        block.classList.toggle('off', !chk.checked);
+        applyPreview();
+      });
+      showLbl.appendChild(chk);
+      showLbl.appendChild(el('span', null, '표시'));
+      head.appendChild(showLbl);
+      block.appendChild(head);
+
+      // 각 조절값 (크기·여백·두께·이미지 높이)
+      SCREEN.PROPS.forEach(function (p) {
+        if (!it[p]) return;
+        const range = it[p]; // [min, max, def]
+        const meta = PROP_META[p];
+        const row = el('div', 'scfg-row');
+        row.appendChild(el('label', null, meta.label));
+        const val = vs[p];
+        const slider = el('input');
+        slider.type = 'range';
+        slider.min = range[0]; slider.max = range[1]; slider.step = meta.step; slider.value = val;
+        slider.className = 'scfg-slider';
+        const num = el('input', 'input scfg-num');
+        num.type = 'number';
+        num.id = 'scf-' + A.scView + '-' + it.key + '-' + p;
+        num.min = range[0]; num.max = range[1]; num.step = meta.step; num.value = val;
+        function sync(src) {
+          const n = clampNum(src.value, range[0], range[1], val);
+          slider.value = n; num.value = n;
+          vs[p] = n;
+          applyPreview();
+        }
+        slider.addEventListener('input', function () { sync(slider); });
+        num.addEventListener('input', function () { sync(num); });
+        const box = el('div', 'scfg-inputs');
+        box.appendChild(slider);
+        box.appendChild(num);
+        box.appendChild(el('span', 'scfg-unit', meta.suffix || '두께'));
+        row.appendChild(box);
+        block.appendChild(row);
+      });
+      holder.appendChild(block);
     });
     scBuilt = true;
   }
 
-  function applyPreviewVars() {
+  function applyPreview() {
     const screen = $('#scfg-screen');
-    if (!screen) return;
-    SCREEN_FIELDS.forEach(function (f) {
-      const unit = f.unit != null ? f.unit : 'px';
-      screen.style.setProperty(SC_VAR[f.key], A.screenStyle[f.key] + unit);
-    });
+    if (screen && SCREEN) SCREEN.apply(screen, A.scView, A.screenStyle);
   }
 
   function renderScreenPreview() {
@@ -1224,49 +1218,78 @@
     if (A.scView === 'reveal') scPreviewReveal(screen);
     else if (A.scView === 'result') scPreviewResult(screen);
     else scPreviewQuestion(screen);
-    applyPreviewVars();
+    applyPreview();
   }
 
+  /** data-sc 태그를 붙여 반환 */
+  function pt(node, sc) {
+    node.dataset.sc = sc;
+    return node;
+  }
+  function scSampleImage(sc) {
+    const wrap = pt(el('div', 'sc-image'), sc);
+    const img = el('img');
+    img.src = SC_SAMPLE_IMG;
+    img.alt = '';
+    wrap.appendChild(img);
+    return wrap;
+  }
   function scTop(title, type, extra) {
     const top = el('div', 'sc-top');
-    top.appendChild(el('span', 'badge sc-badge', title));
-    top.appendChild(el('span', typeBadgeClass(type) + ' sc-badge', TYPE_LABEL[type] || ''));
+    top.appendChild(pt(el('span', 'badge sc-badge', title), 'title'));
+    top.appendChild(pt(el('span', typeBadgeClass(type) + ' sc-badge', TYPE_LABEL[type] || ''), 'type'));
     if (extra) top.appendChild(el('span', 'badge sc-badge', extra));
     return top;
   }
 
   function scPreviewQuestion(root) {
     const head = scTop('1. 기남 · 팝스타', 'choice');
-    head.appendChild(el('div', 'sc-timer', '30초'));
+    head.appendChild(pt(el('div', 'sc-timer', '30초'), 'timer'));
     root.appendChild(head);
-    root.appendChild(el('div', 'sc-q-text', '레이디가가의 진짜 앨범표지를 찾아주세요'));
+    root.appendChild(scSampleImage('image'));
+    root.appendChild(pt(el('div', 'sc-q-text', '레이디가가의 진짜 앨범표지를 찾아주세요'), 'qtext'));
     const list = el('div', 'sc-options');
     ['1번', '2번', '3번', '4번'].forEach(function (t, i) {
       const opt = el('div', 'sc-opt');
-      opt.appendChild(el('span', 'sc-opt-k', String(i + 1)));
-      opt.appendChild(el('span', 'sc-opt-tx', t));
+      opt.appendChild(pt(el('span', 'sc-opt-k', String(i + 1)), 'optnum'));
+      opt.appendChild(pt(el('span', 'sc-opt-tx', t), 'opt'));
       list.appendChild(opt);
     });
     root.appendChild(list);
+    root.appendChild(pt(el('div', 'sc-foot', '제출 0명'), 'foot'));
   }
 
   function scPreviewReveal(root) {
     const c = el('div', 'sc-center');
-    c.appendChild(el('div', 'sc-reveal-eyebrow', '곧 시작합니다'));
-    c.appendChild(el('div', 'sc-reveal-emoji', '🎯'));
-    c.appendChild(el('div', 'sc-reveal-sub', '팝스타'));
-    c.appendChild(el('h1', 'sc-reveal-title', '기남'));
-    c.appendChild(el('div', 'sc-reveal-text', '레이디가가의 진짜 앨범표지를 찾아주세요'));
+    c.appendChild(pt(el('div', 'sc-reveal-eyebrow', '곧 시작합니다'), 'eyebrow'));
+    c.appendChild(scSampleImage('media'));
+    c.appendChild(pt(el('div', 'sc-reveal-sub', '팝스타'), 'sub'));
+    c.appendChild(pt(el('h1', 'sc-reveal-title', '기남'), 'title'));
+    c.appendChild(pt(el('div', 'sc-reveal-text', '레이디가가의 진짜 앨범표지를 찾아주세요'), 'text'));
     root.appendChild(c);
   }
 
   function scPreviewResult(root) {
     root.appendChild(scTop('1. 기남 · 팝스타', 'choice', '결과'));
-    root.appendChild(el('div', 'sc-q-text', '레이디가가의 진짜 앨범표지를 찾아주세요'));
+    root.appendChild(scSampleImage('image'));
+    root.appendChild(pt(el('div', 'sc-q-text', '레이디가가의 진짜 앨범표지를 찾아주세요'), 'qtext'));
     const ans = el('div', 'sc-answer-box');
-    ans.appendChild(el('div', 'sc-answer-label', '정답'));
-    ans.appendChild(el('div', 'sc-answer-value', '4번'));
+    ans.appendChild(pt(el('div', 'sc-answer-label', '정답'), 'anslabel'));
+    ans.appendChild(pt(el('div', 'sc-answer-value', '4번'), 'answer'));
     root.appendChild(ans);
+    const ex = el('div', 'sc-explain');
+    ex.appendChild(el('div', 'sc-explain-label', '해설'));
+    ex.appendChild(pt(el('div', 'sc-explain-text', '진짜 앨범표지는 4번입니다.'), 'explain'));
+    root.appendChild(ex);
+    const rank = el('div', 'sc-rank');
+    ['민수', '영희', '철수'].forEach(function (nick, i) {
+      const row = pt(el('div', 'sc-rank-row'), 'rank');
+      row.appendChild(el('span', 'sc-rank-no', String(i + 1)));
+      row.appendChild(el('span', 'sc-rank-nick', nick));
+      row.appendChild(el('span', 'sc-rank-gain', '+' + (5 - i)));
+      rank.appendChild(row);
+    });
+    root.appendChild(rank);
   }
 
   $$('#scfg-toggle [data-scv]').forEach(function (btn) {
@@ -1275,22 +1298,20 @@
       $$('#scfg-toggle [data-scv]').forEach(function (b) {
         b.classList.toggle('active', b === btn);
       });
-      buildScreenControls(); // 새 화면에 맞는 컨트롤만 다시 그린다
+      buildScreenControls(); // 새 화면에 맞는 항목만 다시 그린다
       renderScreenPreview();
     });
   });
 
   $('#btn-save-screen').addEventListener('click', function () {
-    const style = currentScreenStyle();
-    A.screenStyle = style;
-    socket.emit('admin:saveScreenStyle', { screenStyle: style }, function (res) {
-      if (res && res.ok) toast('큰 화면 글자를 저장했어요 ✓', 'ok');
+    socket.emit('admin:saveScreenStyle', { screenStyle: A.screenStyle }, function (res) {
+      if (res && res.ok) toast('큰 화면 설정을 저장했어요 ✓', 'ok');
       else toast((res && res.error) || '저장 실패', 'err');
     });
   });
 
   $('#btn-reset-screen').addEventListener('click', function () {
-    A.screenStyle = Object.assign({}, SCREEN_DEFAULT);
+    A.screenStyle = SCREEN.defaults();
     buildScreenControls();
     renderScreenPreview();
     toast('기본값으로 되돌렸어요. 저장을 눌러 반영하세요.', 'ok');
@@ -1298,14 +1319,8 @@
 
   /** 서버에서 받은 설정으로 컨트롤을 채운다. */
   function fillScreenStyle(st) {
-    if (!st) return;
-    A.screenStyle = Object.assign({}, SCREEN_DEFAULT, st);
-    if (scBuilt) {
-      SCREEN_FIELDS.forEach(function (f) {
-        const num = document.getElementById('scf-' + f.key);
-        if (num) num.value = A.screenStyle[f.key];
-      });
-    }
+    A.screenStyle = SCREEN.normalize(st);
+    if (scBuilt) buildScreenControls();
     if (!$('#tab-screen').classList.contains('hidden')) renderScreenPreview();
   }
 

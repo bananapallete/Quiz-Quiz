@@ -20,6 +20,7 @@
     doublePoints: false,
     result: null,
     tick: null,
+    screenStyle: null, // 진행자가 정한 요소별 표시/크기/여백/두께
   };
 
   /* ---------- 퍼즐 카드는 문자열/객체 둘 다 받아준다 ---------- */
@@ -67,24 +68,37 @@
 
   function render() {
     root.innerHTML = '';
-    if (S.view === 'question') return renderQuestion();
-    if (S.view === 'reveal') return renderReveal();
-    if (S.view === 'result') return renderResult();
-    return renderIdle();
+    if (S.view === 'question') renderQuestion();
+    else if (S.view === 'reveal') renderReveal();
+    else if (S.view === 'result') renderResult();
+    else renderIdle();
+    applyStyle();
+  }
+
+  /** 진행자가 정한 요소별 표시/크기/여백/두께를 현재 화면에 인라인으로 적용한다. */
+  function applyStyle() {
+    if (window.QQ_SCREEN) window.QQ_SCREEN.apply(root, S.view, S.screenStyle);
+  }
+
+  /** data-sc 태그를 붙여 반환 (screenSpec.apply 가 이걸로 스타일을 찾는다) */
+  function tag(node, sc) {
+    node.dataset.sc = sc;
+    return node;
   }
 
   function bigBadges(q, extraLabel) {
     const top = el('div', 'sc-top');
     const n = q.index != null ? q.index + 1 + '. ' : '';
-    top.appendChild(el('span', 'badge sc-badge', n + (q.title || '') + (q.subtitle ? ' · ' + q.subtitle : '')));
-    top.appendChild(el('span', typeBadgeClass(q.type) + ' sc-badge', TYPE_LABEL[q.type] || ''));
+    top.appendChild(tag(el('span', 'badge sc-badge', n + (q.title || '') + (q.subtitle ? ' · ' + q.subtitle : '')), 'title'));
+    top.appendChild(tag(el('span', typeBadgeClass(q.type) + ' sc-badge', TYPE_LABEL[q.type] || ''), 'type'));
     if (q.doublePoints || S.doublePoints) top.appendChild(el('span', 'badge x2 sc-badge', '⭐ 2배 점수'));
     if (extraLabel) top.appendChild(el('span', 'badge sc-badge', extraLabel));
     return top;
   }
 
-  function bigImage(src) {
+  function bigImage(src, sc) {
     const wrap = el('div', 'sc-image');
+    if (sc) wrap.dataset.sc = sc;
     const img = el('img');
     img.src = src;
     img.alt = '';
@@ -113,15 +127,15 @@
   function renderReveal() {
     const d = S.reveal || {};
     const c = el('div', 'sc-center');
-    c.appendChild(el('div', 'sc-reveal-eyebrow', '곧 시작합니다'));
+    c.appendChild(tag(el('div', 'sc-reveal-eyebrow', '곧 시작합니다'), 'eyebrow'));
     if (d.image) {
-      c.appendChild(bigImage(d.image));
+      c.appendChild(bigImage(d.image, 'media'));
     } else {
-      c.appendChild(el('div', 'sc-reveal-emoji', typeEmoji(d.type)));
+      c.appendChild(tag(el('div', 'sc-reveal-emoji', typeEmoji(d.type)), 'media'));
     }
-    if (d.subtitle) c.appendChild(el('div', 'sc-reveal-sub', d.subtitle));
-    c.appendChild(el('h1', 'sc-reveal-title', d.title || '문제'));
-    if (d.text) c.appendChild(el('div', 'sc-reveal-text', d.text));
+    if (d.subtitle) c.appendChild(tag(el('div', 'sc-reveal-sub', d.subtitle), 'sub'));
+    c.appendChild(tag(el('h1', 'sc-reveal-title', d.title || '문제'), 'title'));
+    if (d.text) c.appendChild(tag(el('div', 'sc-reveal-text', d.text), 'text'));
     root.appendChild(c);
   }
 
@@ -129,7 +143,7 @@
     const q = S.question;
     const wrap = el('div', 'sc-q');
     const head = bigBadges(q);
-    head.appendChild(el('div', 'sc-timer', Math.ceil(remainMs() / 1000) + '초'));
+    head.appendChild(tag(el('div', 'sc-timer', Math.ceil(remainMs() / 1000) + '초'), 'timer'));
     wrap.appendChild(head);
 
     const bar = el('div', 'sc-timer-bar');
@@ -138,8 +152,8 @@
     bar.appendChild(fill);
     wrap.appendChild(bar);
 
-    if (q.image) wrap.appendChild(bigImage(q.image));
-    if (q.text) wrap.appendChild(el('div', 'sc-q-text', q.text));
+    if (q.image) wrap.appendChild(bigImage(q.image, 'image'));
+    if (q.text) wrap.appendChild(tag(el('div', 'sc-q-text', q.text), 'qtext'));
 
     const bodyC = el('div', 'sc-q-body');
     if (q.type === 'choice' || q.type === 'audio') scChoice(bodyC, q, null);
@@ -150,7 +164,7 @@
     wrap.appendChild(bodyC);
 
     if (S.hint) wrap.appendChild(el('div', 'hint-box sc-hint-box', '💡 힌트 : ' + S.hint));
-    wrap.appendChild(el('div', 'sc-foot', '제출 ' + (S.submitted || 0) + '명'));
+    wrap.appendChild(tag(el('div', 'sc-foot', '제출 ' + (S.submitted || 0) + '명'), 'foot'));
     root.appendChild(wrap);
     paintTimer();
   }
@@ -159,18 +173,18 @@
     const d = S.result || {};
     const wrap = el('div', 'sc-q');
     wrap.appendChild(bigBadges(d, '결과'));
-    if (d.image) wrap.appendChild(bigImage(d.image));
-    if (d.text) wrap.appendChild(el('div', 'sc-q-text', d.text));
+    if (d.image) wrap.appendChild(bigImage(d.image, 'image'));
+    if (d.text) wrap.appendChild(tag(el('div', 'sc-q-text', d.text), 'qtext'));
 
     const ans = el('div', 'sc-answer-box');
-    ans.appendChild(el('div', 'sc-answer-label', '정답'));
-    ans.appendChild(el('div', 'sc-answer-value', d.correctAnswer || '-'));
+    ans.appendChild(tag(el('div', 'sc-answer-label', '정답'), 'anslabel'));
+    ans.appendChild(tag(el('div', 'sc-answer-value', d.correctAnswer || '-'), 'answer'));
     wrap.appendChild(ans);
 
     if (d.explanation) {
       const ex = el('div', 'sc-explain');
       ex.appendChild(el('div', 'sc-explain-label', '해설'));
-      ex.appendChild(el('div', 'sc-explain-text', d.explanation));
+      ex.appendChild(tag(el('div', 'sc-explain-text', d.explanation), 'explain'));
       wrap.appendChild(ex);
     }
 
@@ -188,7 +202,7 @@
     if (Array.isArray(d.results) && d.results.length) {
       const top = el('div', 'sc-rank');
       d.results.slice(0, 5).forEach(function (r, i) {
-        const row = el('div', 'sc-rank-row');
+        const row = tag(el('div', 'sc-rank-row'), 'rank');
         row.appendChild(el('span', 'sc-rank-no', String(i + 1)));
         row.appendChild(el('span', 'sc-rank-nick', r.nick));
         if (r.gained != null) row.appendChild(el('span', 'sc-rank-gain', '+' + r.gained));
@@ -206,14 +220,14 @@
     (q.options || []).forEach(function (opt, order) {
       const isCorrect = correctIdx != null && (opt.correct || order === correctIdx);
       const card = el('div', 'sc-opt' + (isCorrect ? ' correct' : ''));
-      card.appendChild(el('span', 'sc-opt-k', String(order + 1)));
+      card.appendChild(tag(el('span', 'sc-opt-k', String(order + 1)), 'optnum'));
       if (opt.image) {
         const img = el('img', 'sc-opt-img');
         img.src = opt.image;
         img.alt = '';
         card.appendChild(img);
       }
-      if (opt.text) card.appendChild(el('span', 'sc-opt-tx', opt.text));
+      if (opt.text) card.appendChild(tag(el('span', 'sc-opt-tx', opt.text), 'opt'));
       if (q.type === 'audio' && opt.audio) card.appendChild(el('span', 'sc-opt-audio', '🔊 음성'));
       if (isCorrect) card.appendChild(el('span', 'sc-opt-mark', '정답 ✓'));
       list.appendChild(card);
@@ -287,45 +301,20 @@
     emoteLayer.show(d && d.id);
   });
 
-  // 진행자가 정한 큰 화면 글자 크기·여백을 CSS 변수로 적용한다.
-  function applyScreenStyle(st) {
-    if (!st) return;
-    const root = document.documentElement.style;
-    // [CSS 변수, 값, 단위]. 두께(weight)는 단위 없는 숫자다.
-    const rows = [
-      ['--sc-qtext-size', st.qTextSize, 'px'],
-      ['--sc-qtext-margin', st.qTextMargin, 'px'],
-      ['--sc-qtext-weight', st.qTextWeight, ''],
-      ['--sc-opt-size', st.optSize, 'px'],
-      ['--sc-opt-weight', st.optWeight, ''],
-      ['--sc-answer-size', st.answerSize, 'px'],
-      ['--sc-answer-margin', st.answerMargin, 'px'],
-      ['--sc-answer-weight', st.answerWeight, ''],
-      ['--sc-rtitle-size', st.revealTitleSize, 'px'],
-      ['--sc-rtitle-margin', st.revealTitleMargin, 'px'],
-      ['--sc-rtitle-weight', st.revealTitleWeight, ''],
-      ['--sc-rtext-size', st.revealTextSize, 'px'],
-      ['--sc-rtext-margin', st.revealTextMargin, 'px'],
-      ['--sc-rtext-weight', st.revealTextWeight, ''],
-    ];
-    rows.forEach(function (r) {
-      const v = Number(r[1]);
-      if (Number.isFinite(v) && v > 0) root.setProperty(r[0], v + r[2]);
-      else root.removeProperty(r[0]);
-    });
-  }
-
   socket.on('hello', function (d) {
     clock.sync(d && d.serverNow);
   });
 
   socket.on('settings:update', function (d) {
-    if (d && d.screenStyle) applyScreenStyle(d.screenStyle);
+    if (d && d.screenStyle) {
+      S.screenStyle = d.screenStyle;
+      applyStyle();
+    }
   });
 
   socket.on('state:sync', function (d) {
     clock.sync(d.serverNow);
-    if (d.settings && d.settings.screenStyle) applyScreenStyle(d.settings.screenStyle);
+    if (d.settings && d.settings.screenStyle) S.screenStyle = d.settings.screenStyle;
     S.board = d.board || [];
     const r = d.round;
     if (d.phase === 'question' && r && r.stage === 'question') {

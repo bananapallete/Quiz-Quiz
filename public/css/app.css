@@ -2363,6 +2363,45 @@ body.has-emote-bar .toast-wrap {
   display: grid;
   gap: 12px;
 }
+/* 항목(요소) 하나 = 표시 체크 + 조절값들 */
+.scfg-item {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+}
+.scfg-item.off {
+  opacity: 0.55;
+}
+.scfg-item.off .scfg-row {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.scfg-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.scfg-item-label {
+  font-weight: 800;
+  font-size: 14px;
+}
+.scfg-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-caption);
+  cursor: pointer;
+}
+.scfg-show input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--blue-2);
+}
 .scfg-row label {
   display: block;
   font-size: 13px;

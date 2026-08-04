@@ -1,5 +1,7 @@
 'use strict';
 
+const screenSpec = require('../public/js/screenSpec');
+
 /**
  * 4x4 보드의 기본 문제 16개.
  * 관리자 페이지에서 전부 수정할 수 있고, 수정 결과는 data/state.json 에 저장된다.
@@ -209,23 +211,8 @@ const defaultSettings = {
   scoreTopUntilRank: 4,
   scoreRest: 1,
   hintBeforeSeconds: 5,
-  // 큰 화면(/screen)에 뜨는 글자들의 크기(px)·위아래 여백(px)·두께(100~900)
-  screenStyle: {
-    qTextSize: 40,
-    qTextMargin: 12,
-    qTextWeight: 800,
-    optSize: 24,
-    optWeight: 800,
-    answerSize: 44,
-    answerMargin: 14,
-    answerWeight: 800,
-    revealTitleSize: 72,
-    revealTitleMargin: 10,
-    revealTitleWeight: 800,
-    revealTextSize: 32,
-    revealTextMargin: 14,
-    revealTextWeight: 700,
-  },
+  // 큰 화면(/screen) 요소별 표시 여부·크기·여백·두께 (규격은 public/js/screenSpec.js)
+  screenStyle: screenSpec.defaults(),
 };
 
 /** 퍼즐 연습 화면에서 쓰는 샘플 (점수와 무관) */
