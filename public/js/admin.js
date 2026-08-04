@@ -1210,8 +1210,14 @@
     scBuilt = true;
   }
 
-  const WEIGHT_OPTIONS = [200, 600, 800];
+  const WEIGHT_OPTIONS = [200, 600];
   function buildWeightRow(vs) {
+    // 예전에 800으로 저장된 값은 남은 선택지 중 가까운 쪽으로 맞춘다
+    if (WEIGHT_OPTIONS.indexOf(vs.weight) === -1) {
+      vs.weight = WEIGHT_OPTIONS.reduce(function (a, b) {
+        return Math.abs(b - vs.weight) < Math.abs(a - vs.weight) ? b : a;
+      });
+    }
     const row = el('div', 'scfg-row');
     row.appendChild(el('label', null, '두께'));
     const group = el('div', 'scfg-weights');
