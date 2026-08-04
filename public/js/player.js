@@ -884,6 +884,14 @@
     submit(false);
   });
 
+  // 결과를 다 본 참가자는 스스로 보드로 돌아가 다음 문제에 하트를 보낼 수 있다.
+  // (내 화면만 바뀌고 다른 참가자·진행자에는 영향 없음)
+  $('#r-to-board').addEventListener('click', function () {
+    stopAllAudio();
+    renderBoard(S.board);
+    showScreen('board');
+  });
+
   /* ---------------- 결과 ---------------- */
 
   /** 결과 화면에 보기 전체(객관식) 또는 짝 전체(퍼즐)를 풀이로 보여준다. */

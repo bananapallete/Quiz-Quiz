@@ -869,11 +869,14 @@ h2::before {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 44px;
-  align-items: start;
+  /* 두 열을 같은 높이로 늘여, 같은 줄의 왼쪽·오른쪽 카드 높이가 맞도록 한다 */
+  align-items: stretch;
   position: relative;
 }
 .puzzle-col {
   display: grid;
+  /* 늘어난 열 높이를 줄 수만큼 똑같이 나눠, 사진 카드와 글자 카드 높이를 맞춘다 */
+  grid-auto-rows: 1fr;
   gap: 10px;
   min-width: 0;
 }
