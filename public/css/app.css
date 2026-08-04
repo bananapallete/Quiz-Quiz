@@ -2361,22 +2361,23 @@ body.has-emote-bar .toast-wrap {
 }
 .scfg-controls {
   display: grid;
-  gap: 12px;
+  gap: 6px;
 }
 /* 항목(요소) 하나 = 표시 체크 + 조절값들 */
 .scfg-item {
   border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
+/* 표시를 끄면 조절값을 접고 머리말만 남겨 세로로 확 줄인다 */
 .scfg-item.off {
-  opacity: 0.55;
+  gap: 0;
+  opacity: 0.7;
 }
 .scfg-item.off .scfg-row {
-  opacity: 0.5;
-  pointer-events: none;
+  display: none;
 }
 .scfg-item-head {
   display: flex;
@@ -2386,33 +2387,40 @@ body.has-emote-bar .toast-wrap {
 }
 .scfg-item-label {
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
 }
 .scfg-show {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-caption);
   cursor: pointer;
 }
 .scfg-show input {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
   accent-color: var(--blue-2);
 }
-.scfg-row label {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-caption);
-  margin-bottom: 6px;
-}
-.scfg-inputs {
+.scfg-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+.scfg-row label {
+  flex: 0 0 auto;
+  width: 74px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-caption);
+}
+.scfg-inputs {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 .scfg-slider {
   flex: 1 1 auto;
@@ -2420,15 +2428,39 @@ body.has-emote-bar .toast-wrap {
   min-width: 0;
 }
 .scfg-num {
-  width: 74px;
+  width: 58px;
   flex: 0 0 auto;
-  padding: 8px 10px;
+  padding: 5px 6px;
   text-align: center;
+  border-radius: var(--r-sm);
 }
 .scfg-unit {
   color: var(--text-caption);
-  font-size: 13px;
+  font-size: 12px;
   flex: 0 0 auto;
+}
+/* 두께: 200 · 600 · 800 세 버튼 */
+.scfg-weights {
+  flex: 1 1 auto;
+  display: flex;
+  gap: 6px;
+}
+.scfg-wbtn {
+  flex: 1 1 0;
+  appearance: none;
+  padding: 5px 0;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.scfg-wbtn.active {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: #fff;
 }
 .scfg-toggle {
   display: flex;

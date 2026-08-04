@@ -1172,6 +1172,11 @@
       // 각 조절값 (크기·여백·두께·이미지 높이)
       SCREEN.PROPS.forEach(function (p) {
         if (!it[p]) return;
+        // 두께는 200 · 600 · 800 세 가지 버튼으로만
+        if (p === 'weight') {
+          block.appendChild(buildWeightRow(vs));
+          return;
+        }
         const range = it[p]; // [min, max, def]
         const meta = PROP_META[p];
         const row = el('div', 'scfg-row');
@@ -1203,6 +1208,27 @@
       holder.appendChild(block);
     });
     scBuilt = true;
+  }
+
+  const WEIGHT_OPTIONS = [200, 600, 800];
+  function buildWeightRow(vs) {
+    const row = el('div', 'scfg-row');
+    row.appendChild(el('label', null, '두께'));
+    const group = el('div', 'scfg-weights');
+    WEIGHT_OPTIONS.forEach(function (w) {
+      const btn = el('button', 'scfg-wbtn' + (vs.weight === w ? ' active' : ''), String(w));
+      btn.type = 'button';
+      btn.addEventListener('click', function () {
+        vs.weight = w;
+        Array.prototype.forEach.call(group.children, function (c) {
+          c.classList.toggle('active', c === btn);
+        });
+        applyPreview();
+      });
+      group.appendChild(btn);
+    });
+    row.appendChild(group);
+    return row;
   }
 
   function applyPreview() {

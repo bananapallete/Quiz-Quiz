@@ -22,7 +22,7 @@
         { key: 'qtext', label: '문제 문구', size: [12, 120, 40], margin: [0, 80, 12], weight: [100, 900, 800] },
         { key: 'optnum', label: '보기 번호', size: [14, 60, 20], weight: [100, 900, 800] },
         { key: 'opt', label: '보기 글자', size: [12, 80, 24], weight: [100, 900, 800] },
-        { key: 'foot', label: '제출 인원', size: [10, 48, 22], weight: [100, 900, 700] },
+        { key: 'foot', label: '제출 인원', size: [10, 48, 22], weight: [100, 900, 600] },
       ],
     },
     {
@@ -31,9 +31,9 @@
       items: [
         { key: 'eyebrow', label: '상단 문구', size: [12, 60, 28], weight: [100, 900, 800] },
         { key: 'media', label: '이미지/이모지', maxH: [20, 90, 56] },
-        { key: 'sub', label: '부제목', size: [12, 60, 28], weight: [100, 900, 700] },
+        { key: 'sub', label: '부제목', size: [12, 60, 28], weight: [100, 900, 600] },
         { key: 'title', label: '제목', size: [20, 160, 72], margin: [0, 80, 10], weight: [100, 900, 800] },
-        { key: 'text', label: '설명', size: [12, 100, 32], margin: [0, 80, 14], weight: [100, 900, 700] },
+        { key: 'text', label: '설명', size: [12, 100, 32], margin: [0, 80, 14], weight: [100, 900, 600] },
       ],
     },
     {
@@ -44,10 +44,10 @@
         { key: 'type', label: '유형 배지', size: [10, 48, 22], weight: [100, 900, 800] },
         { key: 'image', label: '문제 이미지', maxH: [10, 80, 56] },
         { key: 'qtext', label: '문제 문구', size: [12, 120, 40], margin: [0, 80, 12], weight: [100, 900, 800] },
-        { key: 'anslabel', label: '"정답" 라벨', size: [10, 40, 18], weight: [100, 900, 700] },
+        { key: 'anslabel', label: '"정답" 라벨', size: [10, 40, 18], weight: [100, 900, 600] },
         { key: 'answer', label: '정답 값', size: [16, 120, 44], margin: [0, 80, 14], weight: [100, 900, 800] },
         { key: 'explain', label: '해설', size: [12, 60, 28], weight: [100, 900, 800] },
-        { key: 'rank', label: '순위', size: [12, 48, 24], weight: [100, 900, 700] },
+        { key: 'rank', label: '순위', size: [12, 48, 24], weight: [100, 900, 600] },
       ],
     },
   ];
