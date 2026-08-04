@@ -12,7 +12,7 @@
     rankingVisible: false,
     practiceOn: false,
     liveTimer: null,
-    editorBuilt: false,
+    editorOpen: null, // 팝업으로 열려 있는 문제 id
   };
 
   /* ---------------- 로그인 ---------------- */
@@ -265,10 +265,9 @@
       $$('.tab').forEach(function (t) {
         t.classList.toggle('active', t === tab);
       });
-      ['run', 'edit', 'settings'].forEach(function (name) {
+      ['run', 'settings'].forEach(function (name) {
         $('#tab-' + name).classList.toggle('hidden', name !== tab.dataset.tab);
       });
-      if (tab.dataset.tab === 'edit' && A.state) buildEditor(A.state.questions);
     });
   });
 
@@ -290,67 +289,68 @@
     board.forEach(function (q) {
       const hot = q.hearts > 0 && q.hearts >= maxHearts * 0.6;
       const tile = el('div', 'a-tile' + (q.played ? ' played' : '') + (hot ? ' hot' : ''));
+      tile.dataset.id = q.id;
 
-      const head = el('div');
-      head.appendChild(el('div', 'a-title', q.index + 1 + '. ' + q.title));
-      if (q.subtitle) head.appendChild(el('div', 'a-sub', q.subtitle));
-      tile.appendChild(head);
+      // 제목·부제목은 왼쪽, 유형 배지와 하트는 오른쪽 위
+      const head = el('div', 'a-head');
+      const name = el('div', 'a-name');
+      name.appendChild(el('div', 'a-title', q.index + 1 + '. ' + q.title));
+      if (q.subtitle) name.appendChild(el('div', 'a-sub', q.subtitle));
+      head.appendChild(name);
 
-      const meta = el('div', 'a-meta');
-      const tb = el('span', typeBadgeClass(q.type), TYPE_SHORT[q.type] || q.type);
-      meta.appendChild(tb);
-      if (q.doublePoints) meta.appendChild(el('span', 'badge x2', '2배'));
-      if (q.played) meta.appendChild(el('span', 'badge', '출제됨'));
+      const tags = el('div', 'a-tags');
+      tags.appendChild(el('span', typeBadgeClass(q.type), TYPE_SHORT[q.type] || q.type));
       const full = (state.questions || []).find(function (x) {
         return x.id === q.id;
       });
-      if (questionHasImage(full)) meta.appendChild(el('span', 'badge', '🖼'));
-      if (questionHasAudio(full)) meta.appendChild(el('span', 'badge', '🔊'));
-      meta.appendChild(el('span', 'a-hearts', '💗 ' + (q.hearts || 0)));
-      tile.appendChild(meta);
+      if (questionHasImage(full)) {
+        const m = el('span', 'a-mark', '📷');
+        m.title = '이미지가 붙어 있어요';
+        tags.appendChild(m);
+      }
+      if (questionHasAudio(full)) {
+        const m = el('span', 'a-mark', '🔊');
+        m.title = '음성이 붙어 있어요';
+        tags.appendChild(m);
+      }
+      tags.appendChild(el('span', 'a-hearts', '💗 ' + (q.hearts || 0)));
+      head.appendChild(tags);
+      tile.appendChild(head);
 
       const actions = el('div', 'a-actions');
+      const miniRow = el('div', 'a-mini-row');
 
-      const startBtn = el('button', 'btn small', '▶ 출제하기');
+      const editBtn = el('button', 'a-mini a-edit', '✏️');
+      editBtn.title = '카드 수정하기';
+      editBtn.addEventListener('click', function () {
+        openEditor(q.id);
+      });
+      miniRow.appendChild(editBtn);
+
+      const x2Btn = el('button', 'a-mini a-x2' + (q.doublePoints ? ' on' : ''), '2배');
+      x2Btn.title = q.doublePoints ? '2배 점수 끄기' : '2배 점수 켜기';
+      x2Btn.addEventListener('click', function () {
+        socket.emit('admin:setDouble', { questionId: q.id, value: !q.doublePoints }, function (res) {
+          if (!res || !res.ok) toast((res && res.error) || '변경 실패', 'err');
+        });
+      });
+      miniRow.appendChild(x2Btn);
+
+      const playedBtn = el('button', 'a-mini a-played', q.played ? '↩︎' : '✔');
+      playedBtn.title = q.played ? '출제 기록 해제' : '출제됨으로 표시';
+      playedBtn.addEventListener('click', function () {
+        socket.emit('admin:togglePlayed', { questionId: q.id });
+      });
+      miniRow.appendChild(playedBtn);
+      actions.appendChild(miniRow);
+
+      const startBtn = el('button', 'a-start', '▶ 출제하기');
       startBtn.addEventListener('click', function () {
         socket.emit('admin:startQuestion', { questionId: q.id }, function (res) {
           if (!res || !res.ok) toast((res && res.error) || '출제 실패', 'err');
         });
       });
       actions.appendChild(startBtn);
-
-      const x2Btn = el('button', 'btn ghost small', q.doublePoints ? '2배 끄기' : '2배 켜기');
-      x2Btn.addEventListener('click', function () {
-        socket.emit('admin:setDouble', { questionId: q.id, value: !q.doublePoints }, function (res) {
-          if (!res || !res.ok) toast((res && res.error) || '변경 실패', 'err');
-        });
-      });
-      actions.appendChild(x2Btn);
-
-      const editBtn = el('button', 'btn ghost small', '✏️');
-      editBtn.title = '이 문제 편집';
-      editBtn.addEventListener('click', function () {
-        $$('.tab').forEach(function (t) {
-          t.classList.toggle('active', t.dataset.tab === 'edit');
-        });
-        ['run', 'edit', 'settings'].forEach(function (name) {
-          $('#tab-' + name).classList.toggle('hidden', name !== 'edit');
-        });
-        buildEditor(A.state.questions);
-        const details = document.getElementById('ed-' + q.id);
-        if (details) {
-          details.open = true;
-          details.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-      actions.appendChild(editBtn);
-
-      const playedBtn = el('button', 'btn ghost small', q.played ? '↩︎' : '✓');
-      playedBtn.title = q.played ? '출제 기록 해제' : '출제됨으로 표시';
-      playedBtn.addEventListener('click', function () {
-        socket.emit('admin:togglePlayed', { questionId: q.id });
-      });
-      actions.appendChild(playedBtn);
 
       tile.appendChild(actions);
       holder.appendChild(tile);
@@ -479,14 +479,40 @@
 
   /* ---------------- 문제 편집기 ---------------- */
 
-  function buildEditor(questions) {
-    const holder = $('#editor-list');
-    holder.innerHTML = '';
-    questions.forEach(function (q) {
-      holder.appendChild(buildEditorItem(q));
+  /** 보드 카드의 ✏️ 를 누르면 그 문제의 편집창만 팝업으로 띄운다 */
+  function openEditor(questionId) {
+    if (!A.state) return;
+    const q = (A.state.questions || []).find(function (x) {
+      return x.id === questionId;
     });
-    A.editorBuilt = true;
+    if (!q) return;
+
+    const body = $('#editor-modal-body');
+    body.innerHTML = '';
+    const item = buildEditorItem(q);
+    item.open = true;
+    body.appendChild(item);
+
+    $('#editor-modal-title').textContent = (q.index + 1) + '. ' + q.title + ' 수정하기';
+    A.editorOpen = questionId;
+    $('#overlay-editor').classList.add('active');
+    body.scrollTop = 0;
   }
+
+  function closeEditor() {
+    A.editorOpen = null;
+    $('#overlay-editor').classList.remove('active');
+    $('#editor-modal-body').innerHTML = '';
+  }
+
+  $('#editor-close').addEventListener('click', closeEditor);
+  // 바깥 여백을 눌러도 닫히게. 편집창 안쪽 클릭은 그대로 둔다.
+  $('#overlay-editor').addEventListener('click', function (e) {
+    if (e.target === this) closeEditor();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && A.editorOpen) closeEditor();
+  });
 
   function buildEditorItem(q) {
     const details = el('details', 'editor-item');
@@ -505,7 +531,7 @@
       sBadge.style.marginLeft = 'auto';
       summary.appendChild(sBadge);
       if (cur.doublePoints) summary.appendChild(el('span', 'badge x2', '2배'));
-      if (questionHasImage(cur)) summary.appendChild(el('span', 'badge', '🖼 이미지'));
+      if (questionHasImage(cur)) summary.appendChild(el('span', 'badge', '📷 이미지'));
       if (questionHasAudio(cur)) summary.appendChild(el('span', 'badge', '🔊 음성'));
     }
     refreshSummary(q);
@@ -798,6 +824,7 @@
         if (res && res.ok) {
           toast(payload.title + ' 저장 완료 ✓', 'ok');
           refreshSummary(payload);
+          if (A.editorOpen === q.id) closeEditor();
         } else {
           toast((res && res.error) || '저장 실패', 'err');
         }
@@ -812,6 +839,7 @@
           return;
         }
         refreshSummary(payload);
+        if (A.editorOpen === q.id) closeEditor();
         socket.emit('admin:startQuestion', { questionId: q.id }, function (r2) {
           if (!r2 || !r2.ok) toast((r2 && r2.error) || '출제 실패', 'err');
           else toast('출제했습니다!', 'ok');
@@ -1084,9 +1112,6 @@
     renderAdminBoard(state);
     updateLivePanel(state);
     fillSettings(state.settings);
-    if (!A.editorBuilt && !$('#tab-edit').classList.contains('hidden')) {
-      buildEditor(state.questions);
-    }
   });
 
   socket.on('admin:players', function (d) {

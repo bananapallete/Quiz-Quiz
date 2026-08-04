@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#050a1a" />
     <title>퀴즈퀴즈 · 진행자</title>
-    <link rel="stylesheet" href="/css/app.css?v=17" />
+    <link rel="stylesheet" href="/css/app.css?v=18" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>"
@@ -45,7 +45,6 @@
 
       <div class="tabs">
         <div class="tab active" data-tab="run">진행</div>
-        <div class="tab" data-tab="edit">문제 편집</div>
         <div class="tab" data-tab="settings">설정</div>
       </div>
 
@@ -78,17 +77,9 @@
 
             <p class="tiny muted" style="margin: 0 0 10px">
               하트가 많은 칸일수록 <b>붉은 테두리</b>로 강조됩니다. 출제하려면 <b>출제하기</b>를 누르세요.
+              카드의 <b>✏️</b>를 누르면 그 문제의 편집창이 팝업으로 열립니다.
             </p>
             <div class="admin-board" id="admin-board"></div>
-          </section>
-
-          <!-- 문제 편집 탭 -->
-          <section id="tab-edit" class="hidden">
-            <p class="tiny muted" style="margin: 0 0 10px">
-              16칸 각각의 타이틀 · 부제목 · 유형 · 제한시간 · 힌트 · 2배 점수를 설정할 수 있어요.
-              저장하면 즉시 참가자 화면에 반영됩니다.
-            </p>
-            <div class="editor-list" id="editor-list"></div>
           </section>
 
           <!-- 설정 탭 -->
@@ -167,13 +158,24 @@
       </div>
     </main>
 
+    <!-- 카드 수정하기 팝업 -->
+    <div class="overlay overlay-scroll" id="overlay-editor">
+      <div class="overlay-box editor-modal">
+        <div class="editor-modal-head">
+          <span id="editor-modal-title">카드 수정하기</span>
+          <button class="modal-x" id="editor-close" aria-label="닫기">✕</button>
+        </div>
+        <div class="editor-modal-body" id="editor-modal-body"></div>
+      </div>
+    </div>
+
     <!-- 참가자들이 보낸 라이브 반응이 여기로 떠오른다 -->
     <div class="emote-layer admin" id="emote-layer"></div>
 
     <div class="toast-wrap" id="toasts"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/common.js?v=17"></script>
-    <script src="/js/admin.js?v=17"></script>
+    <script src="/js/common.js?v=18"></script>
+    <script src="/js/admin.js?v=18"></script>
   </body>
 </html>

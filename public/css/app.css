@@ -1323,7 +1323,8 @@ body.has-emote-bar .toast-wrap {
  * ================================================================== */
 
 .admin-body {
-  max-width: 1200px;
+  /* 보드 카드가 Figma 폭(약 210px)으로 펴질 만큼 넓게 */
+  max-width: 1320px;
   margin: 0 auto;
   padding: 24px 16px;
 }
@@ -1374,10 +1375,12 @@ body.has-emote-bar .toast-wrap {
   border-color: transparent;
 }
 
+/* ---------- 진행자 보드 카드 (Figma: player-card) ---------- */
+
 .admin-board {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 @media (max-width: 640px) {
   .admin-board {
@@ -1388,52 +1391,132 @@ body.has-emote-bar .toast-wrap {
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1.5px solid var(--border);
-  padding: 14px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 160px;
-}
-.a-tile.played {
-  opacity: 0.5;
+  min-height: 208px;
 }
 .a-tile.hot {
   border-color: var(--gold);
   background: rgba(255, 194, 77, 0.08);
 }
+/* 출제가 끝난 칸은 배경을 한 단계 더 눌러 두고 내용은 흐리게 —
+   되돌리기(↩︎)만 또렷하게 남겨 다시 켤 수 있게 한다 */
+.a-tile.played {
+  background: #10132b;
+}
+.a-tile.played .a-name,
+.a-tile.played .a-tags .badge {
+  opacity: 0.3;
+}
+.a-tile.played .a-hearts,
+.a-tile.played .a-edit,
+.a-tile.played .a-x2,
+.a-tile.played .a-start {
+  opacity: 0.25;
+}
+
+/* 넓을 땐 [제목][배지·하트]가 한 줄, 좁아지면 배지 줄이 통째로 아래로 내려간다.
+   배지 묶음 안에서는 줄바꿈을 막아 제목이 눌려 쪼개지지 않게 한다. */
+.a-tile .a-head {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.a-tile .a-name {
+  /* basis 를 작게 잡아 부제목 길이가 배지 줄을 밀어내지 않게 한다 */
+  flex: 1 1 84px;
+  min-width: 84px;
+}
 .a-tile .a-title {
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1.25;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.2;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
 .a-tile .a-sub {
+  margin-top: 5px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-caption);
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
-.a-tile .a-meta {
+.a-tile .a-hearts {
+  flex: 0 0 auto;
+  font-weight: 800;
+  color: var(--negative);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.a-tile .a-tags {
+  flex: 0 0 auto;
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
 }
-.a-tile .a-hearts {
-  font-weight: 700;
-  color: var(--negative);
-  font-size: 15px;
+.a-tile .a-tags .badge {
+  padding: 4px 8px;
+  font-size: 11px;
+  gap: 3px;
+}
+/* 이미지·음성이 붙어 있다는 표시는 배지 테두리 없이 아이콘만 */
+.a-tile .a-mark {
+  font-size: 13px;
+  line-height: 1;
 }
 .a-tile .a-actions {
   margin-top: auto;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 8px;
 }
-.a-tile .btn {
+.a-tile .a-mini-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.a-mini {
+  appearance: none;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.a-mini:active {
+  transform: scale(0.96);
+}
+.a-mini.on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(255, 194, 77, 0.12);
+}
+.a-start {
+  appearance: none;
+  height: 42px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #59bbf9 0%, #1a5dc9 100%);
+  color: #fff;
   font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+.a-start:active {
+  transform: scale(0.98);
 }
 
 .side-card + .side-card {
@@ -1520,10 +1603,69 @@ body.has-emote-bar .toast-wrap {
   margin-bottom: 8px;
 }
 
-.editor-list {
-  display: grid;
-  gap: 10px;
+/* ---------- 카드 수정하기 팝업 ---------- */
+
+.overlay.overlay-scroll {
+  align-items: flex-start;
+  padding: 24px 16px calc(24px + var(--safe-b));
+  overflow-y: auto;
 }
+.overlay-box.editor-modal {
+  max-width: 760px;
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+.editor-modal-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 20px;
+  border-bottom: 1.5px solid var(--border);
+  font-weight: 800;
+  font-size: 17px;
+}
+.editor-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 20px 20px;
+  -webkit-overflow-scrolling: touch;
+}
+.modal-x {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+/* 팝업 안에서는 접었다 펴는 동작 없이 항상 펼쳐진 채로 보여준다 */
+.editor-modal-body .editor-item {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+/* 팝업 머리말이 이미 문제 이름을 보여주므로 요약 줄은 숨긴다 */
+.editor-modal-body .editor-item > summary {
+  display: none;
+}
+.editor-modal-body .editor-body {
+  border-top: none;
+  padding: 18px 0 0;
+}
+
 .editor-item {
   border-radius: var(--r-md);
   background: var(--surface);
