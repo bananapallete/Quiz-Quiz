@@ -1028,9 +1028,12 @@ h2::before {
 .wheel {
   height: 190px;
   overflow-y: scroll;
+  overflow-x: hidden;
   scroll-snap-type: y mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* 손가락으로 굴릴 때 세로로만 움직이고 가로로는 밀리지 않게 */
+  touch-action: pan-y;
 }
 .wheel::-webkit-scrollbar {
   display: none;
