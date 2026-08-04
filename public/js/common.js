@@ -111,8 +111,9 @@
    * 화면 아래에서 채팅처럼 떠오르는 반응 레이어.
    * 동시에 최대 5개까지만 보이고, 넘치면 가장 오래된 것부터 지운다.
    */
-  function createEmoteLayer(layerNode) {
-    const MAX_VISIBLE = 5;
+  function createEmoteLayer(layerNode, opts) {
+    opts = opts || {};
+    const MAX_VISIBLE = opts.max || 5;
     const LIFE_MS = 2800; // CSS emote-life 애니메이션 길이와 맞춰야 한다
     const live = [];
 
@@ -128,10 +129,18 @@
         if (!sticker || !layerNode) return;
 
         const item = el('div', 'emote-item');
-        // 같은 자리에 겹쳐 쌓이지 않도록 가로 위치를 살짝 흩뜨린다.
-        // 왼쪽으로 흘러가도(--drift) 잘리지 않도록 시작 위치에 여유를 둔다.
-        item.style.setProperty('--ex', (14 + Math.random() * 80).toFixed(0) + 'px');
-        item.style.setProperty('--drift', (Math.random() * 24 - 12).toFixed(0) + 'px');
+        if (opts.sides) {
+          // 큰 화면: 가운데 문제 내용을 피해 좌·우 가장자리에 번갈아 랜덤하게 띄운다.
+          const right = Math.random() < 0.5;
+          const pct = right ? 70 + Math.random() * 18 : 3 + Math.random() * 17;
+          item.style.setProperty('--ex', pct.toFixed(1) + '%');
+          item.style.setProperty('--drift', (Math.random() * 40 - 20).toFixed(0) + 'px');
+        } else {
+          // 같은 자리에 겹쳐 쌓이지 않도록 가로 위치를 살짝 흩뜨린다.
+          // 왼쪽으로 흘러가도(--drift) 잘리지 않도록 시작 위치에 여유를 둔다.
+          item.style.setProperty('--ex', (14 + Math.random() * 80).toFixed(0) + 'px');
+          item.style.setProperty('--drift', (Math.random() * 24 - 12).toFixed(0) + 'px');
+        }
         item.appendChild(sticker);
         layerNode.appendChild(item);
         live.push(item);

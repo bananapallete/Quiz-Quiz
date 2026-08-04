@@ -1336,7 +1336,7 @@ h2::before {
 
 .sticker {
   display: block;
-  height: 54px;
+  height: 43px; /* 기존 54px 의 80% */
   width: auto;
   user-select: none;
   -webkit-user-drag: none;
@@ -1443,6 +1443,16 @@ body.has-emote-bar .toast-wrap {
   width: 320px;
 }
 
+/* 큰 화면(TV): 화면 전체 폭을 쓰고, 스티커는 좌·우 가장자리에서 떠오른다 */
+.emote-layer.screen {
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 46vh;
+  bottom: calc(24px + var(--safe-b));
+  overflow-x: hidden;
+}
+
 @media (max-width: 380px) {
   .emote-btn .sticker {
     height: 25px;
@@ -1451,7 +1461,7 @@ body.has-emote-bar .toast-wrap {
     gap: 4px;
   }
   .sticker {
-    height: 46px;
+    height: 37px; /* 기존 46px 의 80% */
   }
 }
 

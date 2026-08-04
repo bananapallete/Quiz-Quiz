@@ -281,6 +281,12 @@
 
   /* ---------------- 소켓 ---------------- */
 
+  // 참가자들이 보낸 반응 스티커를 좌·우 가장자리에 랜덤하게 띄운다.
+  const emoteLayer = QQ.createEmoteLayer($('#emote-layer'), { sides: true, max: 14 });
+  socket.on('emote:show', function (d) {
+    emoteLayer.show(d && d.id);
+  });
+
   socket.on('hello', function (d) {
     clock.sync(d && d.serverNow);
   });
