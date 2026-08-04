@@ -10,6 +10,15 @@
  *  - 타이포는 Display 96 / H1 56 / H2 34 / Body Large 24 / Body 20 / Caption 16
  * ================================================================== */
 
+/* Pretendard 가변 폰트 (SIL Open Font License) — 인터넷 없이도 쓰도록 직접 호스팅 */
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/PretendardVariable.woff2') format('woff2-variations');
+}
+
 :root {
   /* Background · Surface · Border */
   --bg: #050a1a;
@@ -66,8 +75,8 @@ body {
 body {
   background: var(--bg);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR',
-    'Malgun Gothic', system-ui, sans-serif;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Noto Sans KR', 'Malgun Gothic', system-ui, sans-serif;
   font-weight: 500; /* Body · Medium */
   line-height: 1.5;
   overscroll-behavior-y: contain;
