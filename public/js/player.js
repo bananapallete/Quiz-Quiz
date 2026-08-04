@@ -15,9 +15,8 @@
     answer: null,
     puzzle: null,
     practicePuzzle: null,
-    countdownEndsAt: 0,
     tickTimer: null,
-    countTimer: null,
+    flipTimer: null,
     lastResult: null,
     roster: [],
     audios: [], // 현재 문제에서 만든 오디오 (문제가 바뀌면 전부 멈춘다)
@@ -604,28 +603,49 @@
     return { y: Number(parts[0]), m: Number(parts[1]), d: Number(parts[2]) };
   }
 
-  /* ---------------- 카운트다운 ---------------- */
+  /* ---------------- 문제 공개 (카드 뒤집기) ---------------- */
 
-  function startCountdown(data) {
-    $('#oc-title').textContent = data.title || '문제';
-    $('#oc-sub').textContent = data.subtitle || '';
-    $('#oc-type').textContent = TYPE_LABEL[data.type] || '';
-    S.countdownEndsAt = data.startsAt;
-    showOverlay('overlay-rank', false);
-    showOverlay('overlay-count', true);
-    vibrate([20, 60, 20]);
+  const TYPE_EMOJI = { choice: '⚡', audio: '🔊', short: '✏️', puzzle: '🧩', approx: '🎯' };
 
-    if (S.countTimer) clearInterval(S.countTimer);
-    function tick() {
-      const left = Math.max(0, S.countdownEndsAt - clock.now());
-      $('#oc-num').textContent = String(Math.max(1, Math.ceil(left / 1000)));
-      if (left <= 0) {
-        clearInterval(S.countTimer);
-        S.countTimer = null;
-      }
+  /**
+   * 보드에서 보던 칸(앞면)이 그대로 떠올랐다가 뒤집히며 문제 카드(뒷면)가 나온다.
+   * @param {boolean} instant 재접속처럼 이미 공개된 상태로 들어올 땐 애니메이션 없이 뒤집힌 채로.
+   */
+  function showReveal(data, instant) {
+    const card = $('#flip-card');
+    card.classList.remove('open');
+
+    $('#ff-title').textContent = data.title || '문제';
+    $('#ff-hearts').textContent = String(data.hearts || 0);
+
+    const thumb = $('#fb-thumb');
+    const img = $('#fb-image');
+    if (data.image) {
+      img.src = data.image;
+      thumb.classList.add('has-image');
+    } else {
+      img.removeAttribute('src');
+      thumb.classList.remove('has-image');
+      $('#fb-emoji').textContent = TYPE_EMOJI[data.type] || '🎯';
     }
-    tick();
-    S.countTimer = setInterval(tick, 100);
+    $('#fb-sub').textContent = data.subtitle || '';
+    $('#fb-title').textContent = data.title || '문제';
+    $('#fb-text').textContent = data.text || TYPE_LABEL[data.type] || '';
+
+    showOverlay('overlay-rank', false);
+    showOverlay('overlay-reveal', true);
+
+    if (instant) {
+      card.classList.add('open');
+      return;
+    }
+    vibrate([20, 60, 20]);
+    // 앞면을 잠깐 보여준 뒤 뒤집는다
+    if (S.flipTimer) clearTimeout(S.flipTimer);
+    S.flipTimer = setTimeout(function () {
+      card.classList.add('open');
+      vibrate(30);
+    }, 450);
   }
 
   /* ---------------- 문제 ---------------- */
@@ -641,7 +661,7 @@
     stopAllAudio();
     S.audios = [];
 
-    showOverlay('overlay-count', false);
+    showOverlay('overlay-reveal', false);
     showOverlay('overlay-rank', false);
     showScreen('question');
 
@@ -971,7 +991,7 @@
     stopTicker();
     S.question = null;
     S.lastResult = data;
-    showOverlay('overlay-count', false);
+    showOverlay('overlay-reveal', false);
     showScreen('result');
 
     const rImgWrap = $('#r-image-wrap');
@@ -1105,7 +1125,7 @@
 
   function startPractice(puzzle) {
     S.practicePuzzle = puzzle;
-    showOverlay('overlay-count', false);
+    showOverlay('overlay-reveal', false);
     showOverlay('overlay-rank', false);
     showScreen('practice');
     $('#pr-text').textContent = puzzle.text || '카드를 눌러 짝을 맞춰보세요!';
@@ -1189,9 +1209,9 @@
 
     if (d.phase === 'practice' && d.practice) {
       startPractice(d.practice);
-    } else if (d.round && d.round.stage === 'countdown') {
+    } else if (d.round && d.round.stage === 'reveal') {
       showScreen('board');
-      startCountdown(d.round);
+      showReveal(d.round, true);
     } else if (d.round && d.round.stage === 'question') {
       renderQuestion(d.round.question, d.round.startedAt, {
         submitted: d.round.mySubmitted,
@@ -1236,7 +1256,7 @@
   socket.on('board:show', function (d) {
     stopTicker();
     S.question = null;
-    showOverlay('overlay-count', false);
+    showOverlay('overlay-reveal', false);
     renderBoard(d.board);
     showScreen('board');
   });
@@ -1245,23 +1265,23 @@
     updateHearts(d.items || []);
   });
 
-  socket.on('round:countdown', function (d) {
+  socket.on('round:reveal', function (d) {
     clock.sync(d.serverNow);
     if (!S.me) return;
     showScreen('board');
-    startCountdown(d);
+    showReveal(d);
   });
 
   socket.on('round:cancel', function () {
-    showOverlay('overlay-count', false);
-    if (S.countTimer) clearInterval(S.countTimer);
+    if (S.flipTimer) clearTimeout(S.flipTimer);
+    showOverlay('overlay-reveal', false);
     toast('진행자가 출제를 취소했어요.', 'err');
   });
 
   socket.on('round:start', function (d) {
     clock.sync(d.serverNow);
     if (!S.me) return;
-    if (S.countTimer) clearInterval(S.countTimer);
+    if (S.flipTimer) clearTimeout(S.flipTimer);
     renderQuestion(d.question, d.startedAt, {});
   });
 
@@ -1305,7 +1325,7 @@
   socket.on('player:kicked', function (d) {
     S.me = null;
     stopTicker();
-    showOverlay('overlay-count', false);
+    showOverlay('overlay-reveal', false);
     showOverlay('overlay-rank', false);
     showScreen('join');
     toast((d && d.reason) || '연결이 종료되었습니다.', 'err', 4000);

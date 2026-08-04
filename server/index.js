@@ -64,12 +64,12 @@ const state = {
   players: {}, // nickKey -> { key, nick, score, connected, socketId, joinedAt }
   hearts: {}, // questionId -> number
   played: {}, // questionId -> true
-  phase: 'lobby', // lobby | countdown | question | result | practice
+  phase: 'lobby', // lobby | reveal | question | result | practice
   round: null,
   rankingVisible: false,
 };
 
-const timers = { countdown: null, hint: null, end: null };
+const timers = { hint: null, end: null };
 
 function clearRoundTimers() {
   for (const k of Object.keys(timers)) {
@@ -136,6 +136,7 @@ function normalizeQuestions(list) {
       type: QUESTION_TYPES.includes(q.type) ? q.type : 'choice',
       text: q.text || '',
       image: clampImage(q.image),
+      cardImage: clampImage(q.cardImage),
       timeLimit: clampInt(q.timeLimit, 5, 600, 30),
       hint: q.hint || '',
       explanation: String(q.explanation || '').slice(0, 500),
@@ -441,7 +442,6 @@ function publicSettings() {
     scoreTop: s.scoreTop,
     scoreTopUntilRank: s.scoreTopUntilRank,
     scoreRest: s.scoreRest,
-    countdownSeconds: s.countdownSeconds,
     hintBeforeSeconds: s.hintBeforeSeconds,
   };
 }
@@ -453,16 +453,8 @@ function activeRoundPayload(player) {
   const q = findQuestion(round.questionId);
   if (!q) return null;
 
-  if (state.phase === 'countdown') {
-    return {
-      stage: 'countdown',
-      questionId: q.id,
-      title: q.title,
-      subtitle: q.subtitle,
-      type: q.type,
-      startsAt: round.startsAt,
-      serverNow: Date.now(),
-    };
+  if (state.phase === 'reveal') {
+    return Object.assign({ stage: 'reveal' }, revealPayload(q));
   }
   if (state.phase === 'question') {
     const mySub = player ? round.submissions[player.key] : null;
@@ -545,10 +537,14 @@ function broadcastAdmin() {
  * 라운드 진행
  * ------------------------------------------------------------------ */
 
-function startCountdown(questionId) {
+/**
+ * 진행자가 칸을 고르면 참가자 화면에서 카드가 뒤집히며 문제가 소개된다.
+ * 여기서 바로 시작하지 않고, 진행자가 "퀴즈 시작하기"를 누를 때 beginQuestion() 으로 넘어간다.
+ */
+function revealQuestion(questionId) {
   const q = findQuestion(questionId);
   if (!q) return { ok: false, error: '문제를 찾을 수 없습니다.' };
-  if (state.phase === 'countdown' || state.phase === 'question') {
+  if (state.phase === 'reveal' || state.phase === 'question') {
     return { ok: false, error: '이미 진행 중인 문제가 있습니다.' };
   }
   if (CHOICE_LIKE.includes(q.type)) {
@@ -572,12 +568,10 @@ function startCountdown(questionId) {
   }
 
   clearRoundTimers();
-  const seconds = clampInt(state.settings.countdownSeconds, 1, 10, 3);
-  state.phase = 'countdown';
+  state.phase = 'reveal';
   state.rankingVisible = false;
   state.round = {
     questionId: q.id,
-    startsAt: Date.now() + seconds * 1000,
     startedAt: null,
     timeLimit: q.timeLimit,
     doublePoints: !!q.doublePoints,
@@ -589,26 +583,34 @@ function startCountdown(questionId) {
   };
 
   io.emit('ranking:hide');
-  io.emit('round:countdown', {
-    questionId: q.id,
-    title: q.title,
-    subtitle: q.subtitle,
-    type: q.type,
-    seconds,
-    startsAt: state.round.startsAt,
-    serverNow: Date.now(),
-  });
+  io.emit('round:reveal', revealPayload(q));
   broadcastAdmin();
-
-  timers.countdown = setTimeout(() => beginQuestion(), seconds * 1000);
   return { ok: true };
+}
+
+/** 뒤집힌 카드에 보여줄 내용 (사진 · 부제목 · 제목 · 문제 한 줄) */
+function revealPayload(q) {
+  return {
+    questionId: q.id,
+    index: q.index,
+    title: q.title,
+    subtitle: q.subtitle || '',
+    type: q.type,
+    image: q.cardImage || q.image || '',
+    text: q.text || '',
+    hearts: state.hearts[q.id] || 0,
+    serverNow: Date.now(),
+  };
 }
 
 function beginQuestion() {
   const round = state.round;
-  if (!round) return;
+  if (!round) return { ok: false, error: '진행 중인 문제가 없습니다.' };
+  if (state.phase !== 'reveal') {
+    return { ok: false, error: '지금은 시작할 수 없습니다.' };
+  }
   const q = findQuestion(round.questionId);
-  if (!q) return;
+  if (!q) return { ok: false, error: '문제를 찾을 수 없습니다.' };
 
   round.startedAt = Date.now();
   state.phase = 'question';
@@ -634,6 +636,7 @@ function beginQuestion() {
 
   // 클라이언트 자동 제출을 위한 여유시간 1.2초
   timers.end = setTimeout(() => endRound('시간 종료'), round.timeLimit * 1000 + 1200);
+  return { ok: true };
 }
 
 function submitAnswer(player, answer) {
@@ -988,7 +991,13 @@ io.on('connection', (socket) => {
 
   socket.on('admin:startQuestion', (payload, cb) => {
     if (!requireAdmin(cb)) return;
-    respond(cb, startCountdown(payload && payload.questionId));
+    respond(cb, revealQuestion(payload && payload.questionId));
+  });
+
+  // 카드가 뒤집힌 뒤, 진행자가 "퀴즈 시작하기"를 눌렀을 때
+  socket.on('admin:beginQuestion', (payload, cb) => {
+    if (!requireAdmin(cb)) return;
+    respond(cb, beginQuestion());
   });
 
   socket.on('admin:endRound', (payload, cb) => {
@@ -996,8 +1005,8 @@ io.on('connection', (socket) => {
     if (!state.round || state.round.ended) {
       return respond(cb, { ok: false, error: '진행 중인 문제가 없습니다.' });
     }
-    if (state.phase === 'countdown') {
-      // 카운트다운 중 취소
+    if (state.phase === 'reveal') {
+      // 아직 시작 전이면 출제 취소
       clearRoundTimers();
       state.round = null;
       state.phase = 'lobby';
@@ -1042,6 +1051,7 @@ io.on('connection', (socket) => {
     q.type = QUESTION_TYPES.includes(incoming.type) ? incoming.type : q.type;
     q.text = String(incoming.text || '').slice(0, 500);
     q.image = clampImage(incoming.image);
+    q.cardImage = clampImage(incoming.cardImage);
     q.timeLimit = clampInt(incoming.timeLimit, 5, 600, q.timeLimit);
     q.hint = String(incoming.hint || '').slice(0, 300);
     q.explanation = String(incoming.explanation || '').slice(0, 500);
@@ -1090,7 +1100,6 @@ io.on('connection', (socket) => {
     state.settings.scoreTop = clampInt(s.scoreTop, 0, 100, state.settings.scoreTop);
     state.settings.scoreTopUntilRank = clampInt(s.scoreTopUntilRank, 1, 50, state.settings.scoreTopUntilRank);
     state.settings.scoreRest = clampInt(s.scoreRest, 0, 100, state.settings.scoreRest);
-    state.settings.countdownSeconds = clampInt(s.countdownSeconds, 1, 10, state.settings.countdownSeconds);
     state.settings.hintBeforeSeconds = clampInt(s.hintBeforeSeconds, 1, 60, state.settings.hintBeforeSeconds);
     persist();
     broadcastAdmin();
@@ -1103,7 +1112,7 @@ io.on('connection', (socket) => {
     if (!requireAdmin(cb)) return;
     const on = !!(payload && payload.on);
     if (on) {
-      if (state.phase === 'countdown' || state.phase === 'question') {
+      if (state.phase === 'reveal' || state.phase === 'question') {
         return respond(cb, { ok: false, error: '문제 진행 중에는 연습 화면을 열 수 없습니다.' });
       }
       state.phase = 'practice';

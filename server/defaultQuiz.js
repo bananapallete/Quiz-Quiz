@@ -204,7 +204,6 @@ const defaultSettings = {
   scoreTop: 2,
   scoreTopUntilRank: 4,
   scoreRest: 1,
-  countdownSeconds: 3,
   hintBeforeSeconds: 5,
 };
 

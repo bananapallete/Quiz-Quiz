@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>퀴즈퀴즈 🎉</title>
-    <link rel="stylesheet" href="/css/app.css?v=18" />
+    <link rel="stylesheet" href="/css/app.css?v=20" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>"
@@ -160,14 +160,29 @@
       </p>
     </section>
 
-    <!-- 카운트다운 오버레이 -->
-    <div class="overlay" id="overlay-count">
-      <div class="overlay-box">
-        <div class="badge" id="oc-title">-</div>
-        <div style="font-weight: 800; margin-top: 10px" id="oc-sub"></div>
-        <div class="count-num" id="oc-num">3</div>
-        <div style="font-weight: 800; font-size: 18px">초 뒤 문제가 출제됩니다</div>
-        <div class="muted tiny" style="margin-top: 8px" id="oc-type"></div>
+    <!-- 문제 공개 : 보드의 칸이 뒤집히며 문제 카드가 나온다 -->
+    <div class="overlay" id="overlay-reveal">
+      <div class="flip-wrap">
+        <div class="flip-card" id="flip-card">
+          <div class="flip-inner">
+            <!-- 앞면 : 보드에서 보던 칸 그대로 -->
+            <div class="flip-face flip-front">
+              <div class="ff-title" id="ff-title">-</div>
+              <div class="ff-heart"><span>💗</span><b id="ff-hearts">0</b></div>
+            </div>
+            <!-- 뒷면 : 문제 소개 카드 -->
+            <div class="flip-face flip-back">
+              <div class="fb-thumb" id="fb-thumb">
+                <img id="fb-image" alt="" />
+                <span class="fb-emoji" id="fb-emoji">🎯</span>
+              </div>
+              <div class="fb-sub" id="fb-sub"></div>
+              <div class="fb-title" id="fb-title">-</div>
+              <div class="fb-text" id="fb-text"></div>
+            </div>
+          </div>
+        </div>
+        <p class="flip-wait" id="flip-wait">진행자가 퀴즈를 시작하면 문제가 나와요…</p>
       </div>
     </div>
 
@@ -187,7 +202,7 @@
     <div class="toast-wrap" id="toasts"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/common.js?v=18"></script>
-    <script src="/js/player.js?v=18"></script>
+    <script src="/js/common.js?v=20"></script>
+    <script src="/js/player.js?v=20"></script>
   </body>
 </html>

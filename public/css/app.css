@@ -525,25 +525,155 @@ h2::before {
     transform: none;
   }
 }
-.count-num {
-  font-size: 80px;
-  font-weight: 800;
-  line-height: 1;
-  margin: 14px 0;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: tick 1s ease-in-out infinite;
+/* ---------- 문제 공개 : 뒤집히는 카드 (Figma: player-card / player-card-reverse) ---------- */
+
+.flip-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
-@keyframes tick {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
+.flip-card {
+  --fw: 113px;
+  --fh: 133px;
+  width: var(--fw);
+  height: var(--fh);
+  perspective: 1200px;
+  transition: width 0.55s cubic-bezier(0.2, 0.7, 0.3, 1), height 0.55s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.flip-card.open {
+  --fw: min(246px, 74vw);
+  --fh: min(285px, 86vw);
+}
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.flip-card.open .flip-inner {
+  transform: rotateY(180deg);
+}
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+}
+.flip-back {
+  transform: rotateY(180deg);
+}
+
+/* 앞면 : 보드에서 보던 칸 그대로 */
+.flip-front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.flip-front .ff-title {
+  font-size: 25px;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.flip-front .ff-heart {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--negative);
+}
+
+/* 뒷면 : 사진 · 부제목 · 제목 · 문제 한 줄 */
+.flip-back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 16px 18px;
+  text-align: center;
+}
+.flip-back .fb-thumb {
+  width: 103px;
+  height: 103px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.05);
+}
+.flip-back .fb-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+.flip-back .fb-emoji {
+  font-size: 44px;
+  line-height: 1;
+}
+.flip-back .fb-thumb.has-image {
+  background: none;
+}
+.flip-back .fb-thumb.has-image img {
+  display: block;
+}
+.flip-back .fb-thumb.has-image .fb-emoji {
+  display: none;
+}
+.flip-back .fb-sub {
+  margin-top: 21px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.flip-back .fb-title {
+  margin-top: 11px;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.2;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.flip-back .fb-text {
+  margin-top: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-caption);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  /* 긴 문제는 세 줄까지만 맛보기로 */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.flip-wait {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-caption);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.5s;
+}
+.flip-card.open + .flip-wait {
+  opacity: 1;
 }
 
 /* ---------- 문제 화면 ---------- */

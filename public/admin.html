@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#050a1a" />
     <title>퀴즈퀴즈 · 진행자</title>
-    <link rel="stylesheet" href="/css/app.css?v=18" />
+    <link rel="stylesheet" href="/css/app.css?v=20" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>"
@@ -65,7 +65,8 @@
               </div>
               <div class="muted tiny" id="live-answer" style="margin-bottom: 10px"></div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap">
-                <button id="btn-end" class="btn small">⏹ 바로 채점하기</button>
+                <button id="btn-begin" class="btn small hidden">🚀 퀴즈 시작하기</button>
+                <button id="btn-end" class="btn ghost small">⏹ 바로 채점하기</button>
                 <button id="btn-live-x2" class="btn ghost small">⭐ 2배 점수 켜기</button>
               </div>
             </div>
@@ -102,10 +103,6 @@
                 <div class="field">
                   <label>그 외 정답자 점수</label>
                   <input id="s-rest" class="input" type="number" min="0" max="100" />
-                </div>
-                <div class="field">
-                  <label>카운트다운 (초)</label>
-                  <input id="s-count" class="input" type="number" min="1" max="10" />
                 </div>
                 <div class="field">
                   <label>힌트 공개 시점 (종료 N초 전)</label>
@@ -175,7 +172,7 @@
     <div class="toast-wrap" id="toasts"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/common.js?v=18"></script>
-    <script src="/js/admin.js?v=18"></script>
+    <script src="/js/common.js?v=20"></script>
+    <script src="/js/admin.js?v=20"></script>
   </body>
 </html>

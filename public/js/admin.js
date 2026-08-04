@@ -362,7 +362,8 @@
   function updateLivePanel(state) {
     const panel = $('#live-panel');
     const round = state.round;
-    const running = state.phase === 'countdown' || state.phase === 'question';
+    const revealing = state.phase === 'reveal';
+    const running = revealing || state.phase === 'question';
 
     if (!round || !running) {
       panel.classList.add('hidden');
@@ -386,13 +387,17 @@
     $('#btn-live-x2').textContent = round.doublePoints ? '⭐ 2배 점수 끄기' : '⭐ 2배 점수 켜기';
     $('#live-answer').textContent = q ? '정답 : ' + answerText(q) + (q.hint ? '  ·  힌트 : ' + q.hint : '') : '';
 
+    // 카드가 뒤집힌 상태에서는 "퀴즈 시작하기"만, 시작한 뒤에는 채점 버튼을 보여준다.
+    $('#btn-begin').classList.toggle('hidden', !revealing);
+    $('#btn-end').textContent = revealing ? '✕ 출제 취소' : '⏹ 바로 채점하기';
+
     if (A.liveTimer) clearInterval(A.liveTimer);
+    if (revealing) {
+      $('#live-timer').textContent = '시작 대기';
+      return;
+    }
     A.liveTimer = setInterval(function () {
       const now = clock.now();
-      if (state.phase === 'countdown') {
-        $('#live-timer').textContent = '출제 대기…';
-        return;
-      }
       if (!round.startedAt) return;
       const remain = Math.max(0, round.timeLimit * 1000 - (now - round.startedAt));
       $('#live-timer').textContent = (remain / 1000).toFixed(1) + '초';
@@ -573,6 +578,12 @@
 
     // 문제 이미지 (모든 유형 공통)
     body.appendChild(field('문제 이미지 (선택)', buildImageField('f-image', q.image)));
+
+    // 출제할 때 뒤집히며 나오는 카드에 들어갈 사진.
+    // 비워두면 위의 문제 이미지를 그대로 쓴다.
+    body.appendChild(
+      field('카드 사진 (출제할 때 뒤집히는 카드에 보여요)', buildImageField('f-cardImage', q.cardImage))
+    );
 
     // 객관식 / 음성 — 보기 개수를 자유롭게 추가·삭제할 수 있다.
     const MAX_OPTIONS = 8;
@@ -892,7 +903,7 @@
   /** 문제 본문·보기·퍼즐 카드 중 하나라도 이미지가 붙어 있는지 */
   function questionHasImage(q) {
     if (!q) return false;
-    if (q.image) return true;
+    if (q.image || q.cardImage) return true;
     if ((q.options || []).some(function (o) { return o && o.image; })) return true;
     return (q.pairs || []).some(function (p) {
       return p && (asCard(p.left).image || asCard(p.right).image);
@@ -962,6 +973,7 @@
       type: val('f-type'),
       text: val('f-text'),
       image: val('f-image'),
+      cardImage: val('f-cardImage'),
       timeLimit: parseInt(val('f-timeLimit'), 10) || q.timeLimit,
       hint: val('f-hint'),
       explanation: val('f-explanation'),
@@ -1006,6 +1018,12 @@
     });
   });
 
+  $('#btn-begin').addEventListener('click', function () {
+    socket.emit('admin:beginQuestion', {}, function (res) {
+      if (!res || !res.ok) toast((res && res.error) || '시작 실패', 'err');
+    });
+  });
+
   $('#btn-end').addEventListener('click', function () {
     socket.emit('admin:endRound', {}, function (res) {
       if (!res || !res.ok) toast((res && res.error) || '실패', 'err');
@@ -1026,7 +1044,6 @@
       scoreTop: $('#s-top').value,
       scoreTopUntilRank: $('#s-until').value,
       scoreRest: $('#s-rest').value,
-      countdownSeconds: $('#s-count').value,
       hintBeforeSeconds: $('#s-hint').value,
     };
     socket.emit('admin:saveSettings', { settings: settings }, function (res) {
@@ -1062,7 +1079,6 @@
     $('#s-top').value = s.scoreTop;
     $('#s-until').value = s.scoreTopUntilRank;
     $('#s-rest').value = s.scoreRest;
-    $('#s-count').value = s.countdownSeconds;
     $('#s-hint').value = s.hintBeforeSeconds;
     $('#settings-preview').textContent =
       '지금 규칙 : 1등 ' +
@@ -1073,16 +1089,14 @@
       s.scoreTop +
       '점, 그 외 정답자 ' +
       s.scoreRest +
-      '점 · 카운트다운 ' +
-      s.countdownSeconds +
-      '초 · 종료 ' +
+      '점 · 종료 ' +
       s.hintBeforeSeconds +
       '초 전 힌트 공개';
   }
 
   const PHASE_LABEL = {
     lobby: '대기 중 · 참가자들이 하트를 누르고 있어요',
-    countdown: '출제 카운트다운 중…',
+    reveal: '카드 공개 · 시작 대기 중',
     question: '문제 진행 중',
     result: '결과 화면 표시 중',
     practice: '퍼즐 연습 화면 표시 중',
