@@ -1799,6 +1799,54 @@ body.has-emote-bar .toast-wrap {
   padding: 18px 0 0;
 }
 
+/* ---------- 편집 팝업 안의 "실제 출제 화면" 미리보기 ---------- */
+.ep-wrap {
+  margin: 2px 0 20px;
+}
+.ep-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-caption);
+  margin-bottom: 8px;
+}
+.ep-phone {
+  max-width: 380px;
+  margin: 0 auto;
+  border-radius: 28px;
+  border: 1.5px solid var(--border);
+  background: #0a1020;
+  padding: 12px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+}
+.ep-screen {
+  background: var(--bg);
+  border-radius: 18px;
+  padding: 16px 14px;
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+/* 미리보기는 실제 화면 클래스를 그대로 쓰되, 눌러도 아무 일 없게만 한다.
+   (disabled 로 인한 흐려짐은 되돌려 실제 화면과 똑같이 보이게) */
+.ep-screen .submit-bar {
+  position: static;
+  margin-top: 16px;
+}
+.ep-screen button,
+.ep-screen .input {
+  cursor: default;
+}
+.ep-screen button:disabled,
+.ep-screen .input:disabled {
+  opacity: 1;
+}
+.ep-screen .opt:active,
+.ep-screen .pcard:active,
+.ep-screen .numkey:active,
+.ep-screen .btn:active {
+  transform: none;
+}
+
 .editor-item {
   border-radius: var(--r-md);
   background: var(--surface);

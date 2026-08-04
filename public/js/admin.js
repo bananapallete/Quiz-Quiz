@@ -119,6 +119,8 @@
         preview.src = '';
         clearBtn.style.display = 'none';
       }
+      // 사진을 넣거나 지우면 미리보기가 바로 갱신되도록 입력 이벤트를 흘려보낸다.
+      hidden.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     function loadFile(file) {
@@ -543,6 +545,15 @@
 
     const body = el('div', 'editor-body');
 
+    // 실제 출제 화면과 똑같은 미리보기. 아래 폼을 고치면 곧바로 여기 반영된다.
+    const previewWrap = el('div', 'ep-wrap');
+    previewWrap.appendChild(el('div', 'ep-label', '👀 참가자에게 이렇게 보여요'));
+    const epPhone = el('div', 'ep-phone');
+    const epScreen = el('div', 'ep-screen');
+    epPhone.appendChild(epScreen);
+    previewWrap.appendChild(epPhone);
+    body.appendChild(previewWrap);
+
     // 타이틀 / 부제목
     const row1 = el('div', 'row2');
     row1.appendChild(field('타이틀 (칸에 크게 표시)', inputNode('text', q.title, 'f-title')));
@@ -882,7 +893,213 @@
     addOptBtn.addEventListener('click', syncSections);
     syncSections();
 
+    // 폼을 고칠 때마다 미리보기를 실제 출제 화면과 똑같이 다시 그린다.
+    let previewQueued = false;
+    function updatePreview() {
+      previewQueued = false;
+      try {
+        renderQuestionPreview(epScreen, collect(body, q));
+      } catch (e) {
+        /* 편집 도중 잠깐 비어 있는 값이 있어도 미리보기는 조용히 넘어간다 */
+      }
+    }
+    function schedulePreview() {
+      if (previewQueued) return;
+      previewQueued = true;
+      // 보기 추가/삭제처럼 DOM 이 바뀐 뒤 값을 읽도록 한 틱 미룬다.
+      setTimeout(updatePreview, 0);
+    }
+    body.addEventListener('input', schedulePreview);
+    body.addEventListener('change', schedulePreview);
+    body.addEventListener('click', schedulePreview);
+    updatePreview();
+
     return details;
+  }
+
+  /* ---------------- 실제 출제 화면과 똑같은 미리보기 ---------------- */
+
+  const PREVIEW_TYPE_EMOJI = { choice: '⚡', audio: '🔊', short: '✏️', puzzle: '🧩', approx: '🎯' };
+
+  /** 참가자 문제 화면(public/index.html #screen-question)과 같은 구조·클래스로 그린다. */
+  function renderQuestionPreview(root, q) {
+    root.innerHTML = '';
+
+    const head = el('div', 'q-head');
+    const titleText = q.title + (q.subtitle ? ' · ' + q.subtitle : '');
+    head.appendChild(el('span', 'badge', titleText || '(제목 없음)'));
+    head.appendChild(el('span', typeBadgeClass(q.type), TYPE_LABEL[q.type] || ''));
+    if (q.doublePoints) head.appendChild(el('span', 'badge x2', '⭐ 2배 점수'));
+    root.appendChild(head);
+
+    // 타이머 바 (미리보기라 가득 찬 상태로 고정)
+    const tw = el('div', 'timer-wrap');
+    const bar = el('div', 'timer-bar');
+    const fill = el('div', 'timer-fill');
+    fill.style.width = '100%';
+    bar.appendChild(fill);
+    tw.appendChild(bar);
+    const trow = el('div', 'timer-row');
+    trow.appendChild(el('span', null, '제출 0명'));
+    trow.appendChild(el('span', 'timer-num', (q.timeLimit || 30) + '초'));
+    tw.appendChild(trow);
+    root.appendChild(tw);
+
+    if (q.image) {
+      const wrap = el('div', 'q-image-wrap');
+      const img = el('img');
+      img.src = q.image;
+      img.alt = '';
+      wrap.appendChild(img);
+      root.appendChild(wrap);
+    }
+
+    root.appendChild(el('div', 'q-text', q.text || ''));
+
+    const bodyC = el('div');
+    if (q.type === 'choice' || q.type === 'audio') previewChoice(bodyC, q);
+    else if (q.type === 'short') previewShort(bodyC);
+    else if (q.type === 'approx') {
+      if (q.approxMode === 'date') previewDateWheel(bodyC, q);
+      else previewNumberPad(bodyC, q);
+    } else if (q.type === 'puzzle') previewPuzzle(bodyC, q);
+    root.appendChild(bodyC);
+
+    if (q.hint) {
+      const hb = el('div', 'hint-box');
+      hb.textContent = '💡 힌트 : ' + q.hint;
+      root.appendChild(hb);
+    }
+
+    const sb = el('div', 'submit-bar');
+    const btn = el('button', 'btn full', '제출하기');
+    btn.type = 'button';
+    btn.disabled = true;
+    sb.appendChild(btn);
+    root.appendChild(sb);
+  }
+
+  function previewChoice(body, q) {
+    const list = el('div', 'options');
+    (q.options || []).forEach(function (opt, i) {
+      const b = el('button', 'opt' + (q.answerIndex === i ? ' selected' : ''));
+      b.type = 'button';
+      b.disabled = true;
+      if (opt.image) {
+        const img = el('img', 'opt-img');
+        img.src = opt.image;
+        img.alt = '';
+        b.appendChild(img);
+      }
+      const row = el('div', 'opt-row');
+      row.appendChild(el('span', 'k', String(i + 1)));
+      row.appendChild(el('span', null, opt.text || ''));
+      b.appendChild(row);
+      if (q.type === 'audio' && opt.audio) b.appendChild(el('span', 'opt-play', '▶︎ 듣기'));
+      list.appendChild(b);
+    });
+    if (!list.children.length) list.appendChild(el('p', 'puzzle-legend', '보기를 입력하면 여기 나와요.'));
+    body.appendChild(list);
+  }
+
+  function previewShort(body) {
+    const input = el('input', 'input');
+    input.type = 'text';
+    input.placeholder = '정답을 입력하세요';
+    input.disabled = true;
+    body.appendChild(input);
+  }
+
+  function previewNumberPad(body, q) {
+    const display = el('div', 'numpad-display');
+    display.appendChild(el('span', 'numpad-value', '0'));
+    display.appendChild(el('span', 'numpad-unit', q.approxUnit || ''));
+    body.appendChild(display);
+    const pad = el('div', 'numpad');
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '←'].forEach(function (k) {
+      const b = el('button', 'numkey' + (k === '←' ? ' wide-back' : ''), k);
+      b.type = 'button';
+      b.disabled = true;
+      pad.appendChild(b);
+    });
+    body.appendChild(pad);
+    body.appendChild(el('p', 'puzzle-legend', '정답에 가장 가까운 사람이 1등! 숫자 버튼으로 입력해 주세요.'));
+  }
+
+  function previewDateWheel(body, q) {
+    const start = parseYear(q.approxDateStart, 1980);
+    const end = parseYear(q.approxDateEnd, 2026);
+    const mid = parseISOish(q.approxDate) || { y: Math.round((start + end) / 2), m: 8, d: 1 };
+    const display = el('div', 'wheel-display', mid.y + '년 ' + mid.m + '월 ' + mid.d + '일');
+    body.appendChild(display);
+    const wheels = el('div', 'wheels');
+    wheels.appendChild(previewWheelCol(mid.y, '년'));
+    wheels.appendChild(previewWheelCol(mid.m, '월'));
+    wheels.appendChild(previewWheelCol(mid.d, '일'));
+    body.appendChild(wheels);
+    body.appendChild(el('p', 'puzzle-legend', '위아래로 굴려서 날짜를 맞춰보세요. 정답에 가까울수록 높은 점수!'));
+  }
+
+  /** 정적 휠 한 칸 (가운데 값 강조) */
+  function previewWheelCol(center, unit) {
+    const wrap = el('div', 'wheel-wrap');
+    const wheel = el('div', 'wheel');
+    wheel.appendChild(el('div', 'wheel-pad'));
+    for (let d = -2; d <= 2; d++) {
+      const it = el('div', 'wheel-item' + (d === 0 ? ' on' : ''), String(center + d) + unit);
+      wheel.appendChild(it);
+    }
+    wheel.appendChild(el('div', 'wheel-pad'));
+    wrap.appendChild(wheel);
+    wrap.appendChild(el('div', 'wheel-mask'));
+    return wrap;
+  }
+
+  function previewPuzzle(body, q) {
+    const pairs = q.pairs || [];
+    if (!pairs.length) {
+      body.appendChild(el('p', 'puzzle-legend', '짝을 입력하면 여기 카드로 나와요.'));
+      return;
+    }
+    body.appendChild(
+      el('p', 'puzzle-legend', '왼쪽 카드를 누른 뒤 오른쪽 카드를 누르면 연결돼요. 연결된 카드를 다시 누르면 해제됩니다.')
+    );
+    const wrap = el('div', 'puzzle');
+    const colL = el('div', 'puzzle-col');
+    const colR = el('div', 'puzzle-col');
+    pairs.forEach(function (p) {
+      colL.appendChild(previewCard(p.left));
+      colR.appendChild(previewCard(p.right));
+    });
+    wrap.appendChild(colL);
+    wrap.appendChild(colR);
+    body.appendChild(wrap);
+  }
+
+  function previewCard(item) {
+    const c = asCard(item);
+    const card = el('button', 'pcard');
+    card.type = 'button';
+    card.disabled = true;
+    if (c.image) {
+      const img = el('img', 'pcard-img');
+      img.src = c.image;
+      img.alt = '';
+      card.appendChild(img);
+    }
+    const row = el('div', 'pcard-row');
+    row.appendChild(el('span', null, c.text || ''));
+    card.appendChild(row);
+    return card;
+  }
+
+  function parseYear(iso, fallback) {
+    const m = /^(\d{4})-/.exec(String(iso || ''));
+    return m ? Number(m[1]) : fallback;
+  }
+  function parseISOish(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    return m ? { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) } : null;
   }
 
   function field(labelText, node) {
@@ -987,7 +1204,8 @@
         })
         .filter(Boolean),
       pairs: pairs.filter(function (p) {
-        return p.left.text.trim() && p.right.text.trim();
+        // 사진만 있는 카드(글자 없음)도 유효한 짝으로 인정한다.
+        return (p.left.text.trim() || p.left.image) && (p.right.text.trim() || p.right.image);
       }),
       approxMode: val('f-approxMode') || 'number',
       approxTarget: Number(val('f-approxTarget')) || 0,
