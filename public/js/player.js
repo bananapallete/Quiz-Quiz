@@ -158,7 +158,6 @@
 
       const mid = el('div', 't-mid');
       mid.appendChild(el('div', 't-title', q.title));
-      if (q.subtitle) mid.appendChild(el('div', 't-sub', q.subtitle));
       tile.appendChild(mid);
 
       const heart = el('div', 't-heart');

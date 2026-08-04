@@ -380,15 +380,6 @@ h2::before {
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
-.tile .t-sub {
-  font-size: clamp(9px, 2.3vw, 11px);
-  font-weight: 500;
-  color: var(--text-caption);
-  line-height: 1.2;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  margin-top: 3px;
-}
 .tile .t-mid {
   flex: 1;
   display: flex;
