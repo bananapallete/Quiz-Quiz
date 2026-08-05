@@ -19,7 +19,7 @@
         },
         "timer": {
           "show": 1,
-          "size": 64,
+          "size": 32,
           "weight": 600
         },
         "image": {
@@ -28,13 +28,13 @@
         },
         "qtext": {
           "show": 1,
-          "size": 40,
+          "size": 21,
           "margin": 12,
           "weight": 600
         },
         "optnum": {
           "show": 1,
-          "size": 20,
+          "size": 22,
           "weight": 600
         },
         "opt": {
