@@ -347,6 +347,7 @@ h2::before {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+  margin-top: 18px;
 }
 @media (max-width: 380px) {
   .board {
