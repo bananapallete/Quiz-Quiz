@@ -1034,7 +1034,10 @@
       "approxDateEnd": ""
     }
   ],
-  "hearts": {},
+  "hearts": {
+    "q10": 3,
+    "q11": 3
+  },
   "played": {
     "q1": true,
     "q2": true
