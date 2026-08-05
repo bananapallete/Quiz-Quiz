@@ -78,14 +78,14 @@
       },
       "result": {
         "title": {
-          "show": 1,
+          "show": 0,
           "size": 22,
-          "weight": 800
+          "weight": 600
         },
         "type": {
-          "show": 1,
+          "show": 0,
           "size": 22,
-          "weight": 800
+          "weight": 600
         },
         "image": {
           "show": 1,
@@ -93,9 +93,9 @@
         },
         "qtext": {
           "show": 1,
-          "size": 40,
+          "size": 17,
           "margin": 12,
-          "weight": 800
+          "weight": 600
         },
         "anslabel": {
           "show": 1,
@@ -106,16 +106,16 @@
           "show": 1,
           "size": 44,
           "margin": 14,
-          "weight": 800
+          "weight": 600
         },
         "explain": {
           "show": 1,
-          "size": 28,
-          "weight": 800
+          "size": 24,
+          "weight": 600
         },
         "rank": {
           "show": 1,
-          "size": 24,
+          "size": 20,
           "weight": 600
         }
       }
