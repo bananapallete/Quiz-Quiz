@@ -1019,7 +1019,9 @@
     }
   ],
   "hearts": {},
-  "played": {},
+  "played": {
+    "q5": true
+  },
   "players": [
     {
       "key": "한정 테스트",
