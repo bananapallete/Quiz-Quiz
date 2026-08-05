@@ -1286,9 +1286,29 @@ function respond(cb, data) {
  * 시작
  * ------------------------------------------------------------------ */
 
-restore();
+// 시작 시: GitHub 상태 브랜치에 저장된 내용이 있으면 먼저 로컬로 내려받아 복원한다.
+// (임시 디스크가 초기화되는 배포 환경에서도 상태가 유지되도록)
+async function boot() {
+  if (githubSync.isEnabled()) {
+    try {
+      const remote = await githubSync.load();
+      if (remote) {
+        const parsed = JSON.parse(remote);
+        store.saveNow(parsed);
+        console.log('[github-sync] 원격 상태 브랜치에서 저장된 내용을 불러왔습니다.');
+      } else {
+        console.log('[github-sync] 원격에 저장된 상태가 아직 없습니다. (첫 저장 시 생성됩니다)');
+      }
+    } catch (e) {
+      console.error('[github-sync] 원격 상태 불러오기 실패 — 로컬 파일로 진행합니다:', e.message);
+    }
+  }
+  restore();
+  startListening();
+}
 
-server.listen(PORT, '0.0.0.0', () => {
+function startListening() {
+  server.listen(PORT, '0.0.0.0', () => {
   const nets = os.networkInterfaces();
   const addrs = [];
   for (const name of Object.keys(nets)) {
@@ -1312,7 +1332,10 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('  ⚠️  기본 비밀번호입니다. 인터넷에 배포할 때는 ADMIN_PASSWORD 를 꼭 바꿔주세요.');
   }
   console.log('');
-});
+  });
+}
+
+boot();
 
 process.on('SIGINT', () => {
   persist();
