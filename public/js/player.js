@@ -58,7 +58,18 @@
   /* ---------------- 화면 전환 ---------------- */
 
   const SCREENS = ['join', 'board', 'question', 'result', 'practice'];
+  // 결과 화면에서 5초 뒤 자동으로 보드로 돌아가는 타이머
+  let resultReturnTimer = null;
+  function clearResultReturn() {
+    if (resultReturnTimer) {
+      clearTimeout(resultReturnTimer);
+      resultReturnTimer = null;
+    }
+  }
+
   function showScreen(name) {
+    // 결과가 아닌 다른 화면으로 넘어가면 자동 복귀 타이머를 멈춘다.
+    if (name !== 'result') clearResultReturn();
     SCREENS.forEach(function (s) {
       const node = document.getElementById('screen-' + s);
       if (node) node.classList.toggle('active', s === name);
@@ -886,11 +897,20 @@
 
   // 결과를 다 본 참가자는 스스로 보드로 돌아가 다음 문제에 하트를 보낼 수 있다.
   // (내 화면만 바뀌고 다른 참가자·진행자에는 영향 없음)
-  $('#r-to-board').addEventListener('click', function () {
+  function goBoard() {
+    clearResultReturn();
     stopAllAudio();
     renderBoard(S.board);
     showScreen('board');
+  }
+
+  $('#r-to-board').addEventListener('click', function (e) {
+    e.stopPropagation();
+    goBoard();
   });
+
+  // 결과 화면은 5초가 지나거나 아무 곳이나 누르면 자동으로 보드로 돌아간다.
+  $('#screen-result').addEventListener('click', goBoard);
 
   /* ---------------- 결과 ---------------- */
 
@@ -1001,6 +1021,8 @@
     S.lastResult = data;
     showOverlay('overlay-reveal', false);
     showScreen('result');
+    clearResultReturn();
+    resultReturnTimer = setTimeout(goBoard, 5000);
 
     const rImgWrap = $('#r-image-wrap');
     if (data.image) {
