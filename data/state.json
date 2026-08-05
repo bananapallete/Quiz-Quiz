@@ -28,7 +28,7 @@
         },
         "qtext": {
           "show": 1,
-          "size": 40,
+          "size": 22,
           "margin": 12,
           "weight": 600
         },
@@ -39,7 +39,7 @@
         },
         "opt": {
           "show": 1,
-          "size": 24,
+          "size": 16,
           "weight": 600
         },
         "foot": {
