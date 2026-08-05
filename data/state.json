@@ -78,12 +78,12 @@
       },
       "result": {
         "title": {
-          "show": 1,
+          "show": 0,
           "size": 22,
           "weight": 600
         },
         "type": {
-          "show": 1,
+          "show": 0,
           "size": 22,
           "weight": 600
         },
