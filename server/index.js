@@ -1228,6 +1228,21 @@ io.on('connection', (socket) => {
       state.questions = JSON.parse(JSON.stringify(defaultQuestions));
       io.emit('ranking:hide');
       io.emit('board:show', { board: boardPayload() });
+    } else if (what === 'faces') {
+      // 코드 기본값의 친구 얼굴(cardImage)만 채운다. 문제 수정 내용은 그대로 둔다.
+      let filled = 0;
+      state.questions.forEach((q) => {
+        const base = defaultQuestions.find((d) => d.id === q.id) || defaultQuestions[q.index];
+        if (base && base.cardImage && !q.cardImage) {
+          q.cardImage = base.cardImage;
+          filled += 1;
+        }
+      });
+      io.emit('board:show', { board: boardPayload() });
+      persist();
+      broadcastBoard();
+      broadcastAdmin();
+      return respond(cb, { ok: true, filled });
     } else if (what === 'all') {
       state.hearts = {};
       state.played = {};
