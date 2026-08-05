@@ -65,13 +65,13 @@
         },
         "title": {
           "show": 1,
-          "size": 36,
+          "size": 21,
           "margin": 18,
           "weight": 600
         },
         "text": {
           "show": 1,
-          "size": 32,
+          "size": 27,
           "margin": 14,
           "weight": 200
         }
