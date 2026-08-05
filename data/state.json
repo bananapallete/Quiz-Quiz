@@ -949,7 +949,8 @@
     "q13": true,
     "q1": true,
     "q2": true,
-    "q9": true
+    "q9": true,
+    "q4": true
   },
   "players": [
     {
@@ -967,7 +968,7 @@
     {
       "key": "한정 아이폰",
       "nick": "한정 아이폰",
-      "score": 15,
+      "score": 20,
       "joinedAt": 1785940354762
     }
   ]
