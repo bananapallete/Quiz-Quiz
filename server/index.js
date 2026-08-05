@@ -252,7 +252,8 @@ function normalizePairs(pairs) {
   if (!Array.isArray(pairs)) return [];
   return pairs
     .map((p) => ({ left: normalizeCard(p && p.left, 60), right: normalizeCard(p && p.right, 60) }))
-    .filter((p) => p.left.text.trim() !== '' && p.right.text.trim() !== '')
+    // 글자가 없어도 이미지가 있으면 유효한 카드로 본다 (사진 짝 맞추기 퍼즐)
+    .filter((p) => (p.left.text.trim() !== '' || p.left.image) && (p.right.text.trim() !== '' || p.right.image))
     .slice(0, 8);
 }
 
