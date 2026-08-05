@@ -1024,12 +1024,14 @@
     "q15": 2,
     "q16": 6
   },
-  "played": {},
+  "played": {
+    "q4": true
+  },
   "players": [
     {
       "key": "맥 컴퓨터",
       "nick": "맥 컴퓨터",
-      "score": 0,
+      "score": 5,
       "joinedAt": 1785898488620
     }
   ]
