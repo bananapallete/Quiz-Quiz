@@ -226,4 +226,27 @@ const practicePuzzle = {
   ],
 };
 
+// 친구 얼굴 스티커를 각 타일에 붙인다. (타일 표시 + 출제 직전 카드 이미지로 쓰임)
+// cardImage 로 넣으면 보드 타일과 뒤집히는 카드가 같은 얼굴을 쓴다.
+// 아직 사진이 없는 친구(정우·니엘·경우·영선)는 나중에 추가.
+const faces = require('./faces');
+const faceByIndex = {
+  0: '기남',
+  2: '기훈',
+  4: '형민',
+  5: '건우',
+  6: '민규', // 민규 A
+  7: '민규-1', // 민규 B (다른 사람)
+  8: '윤수',
+  9: '장호',
+  12: '성배', // 성배 A·B·C 는 같은 사람
+  13: '성배',
+  14: '성배',
+  15: '태중',
+};
+defaultQuestions.forEach((question) => {
+  const key = faceByIndex[question.index];
+  if (key && faces[key]) question.cardImage = faces[key];
+});
+
 module.exports = { defaultQuestions, defaultSettings, practicePuzzle };

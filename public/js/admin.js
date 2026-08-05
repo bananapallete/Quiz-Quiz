@@ -297,6 +297,12 @@
 
       // 제목·부제목은 왼쪽, 유형 배지와 하트는 오른쪽 위
       const head = el('div', 'a-head');
+      if (q.faceImage) {
+        const face = el('img', 'a-face');
+        face.src = q.faceImage;
+        face.alt = '';
+        head.appendChild(face);
+      }
       const name = el('div', 'a-name');
       name.appendChild(el('div', 'a-title', q.index + 1 + '. ' + q.title));
       if (q.subtitle) name.appendChild(el('div', 'a-sub', q.subtitle));

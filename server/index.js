@@ -315,6 +315,8 @@ function boardPayload() {
     hearts: state.hearts[q.id] || 0,
     played: !!state.played[q.id],
     doublePoints: !!q.doublePoints,
+    // 타일에 보여줄 친구 얼굴 (카드 이미지와 동일)
+    faceImage: q.cardImage || '',
   }));
 }
 

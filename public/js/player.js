@@ -167,6 +167,13 @@
       }
 
       const mid = el('div', 't-mid');
+      if (q.faceImage) {
+        const face = el('img', 't-face');
+        face.src = q.faceImage;
+        face.alt = '';
+        mid.appendChild(face);
+        tile.classList.add('has-face');
+      }
       mid.appendChild(el('div', 't-title', q.title));
       tile.appendChild(mid);
 
