@@ -1036,19 +1036,20 @@
   ],
   "hearts": {},
   "played": {
-    "q1": true
+    "q1": true,
+    "q2": true
   },
   "players": [
     {
       "key": "한정 테스트",
       "nick": "한정 테스트",
-      "score": 0,
+      "score": 5,
       "joinedAt": 1785943491322
     },
     {
       "key": "한정 아이폰",
       "nick": "한정 아이폰",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1785946815259
     }
   ]
