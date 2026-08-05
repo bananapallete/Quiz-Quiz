@@ -970,12 +970,12 @@ h2::before {
   align-items: baseline;
   justify-content: center;
   gap: 8px;
-  padding: 24px 16px;
+  padding: 14px 16px;
   border-radius: var(--r-lg);
   background: var(--surface);
   border: 1.5px solid var(--border);
-  margin-bottom: 20px;
-  min-height: 92px;
+  margin-bottom: 12px;
+  min-height: 64px;
 }
 .numpad-value {
   font-size: clamp(34px, 11vw, 55px);
@@ -991,7 +991,7 @@ h2::before {
 .numpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 .numkey {
   appearance: none;
@@ -999,8 +999,8 @@ h2::before {
   background: var(--surface);
   color: var(--text-primary);
   border-radius: var(--r-pill);
-  padding: 20px 0;
-  font-size: 24px;
+  padding: 11px 0;
+  font-size: 22px;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.06s ease, background 0.15s ease;
