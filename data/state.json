@@ -51,27 +51,27 @@
       "reveal": {
         "eyebrow": {
           "show": 1,
-          "size": 28,
-          "weight": 800
+          "size": 21,
+          "weight": 600
         },
         "media": {
           "show": 1,
           "maxH": 56
         },
         "sub": {
-          "show": 1,
+          "show": 0,
           "size": 28,
           "weight": 600
         },
         "title": {
           "show": 1,
-          "size": 72,
-          "margin": 10,
-          "weight": 800
+          "size": 25,
+          "margin": 18,
+          "weight": 600
         },
         "text": {
           "show": 1,
-          "size": 32,
+          "size": 25,
           "margin": 14,
           "weight": 600
         }
