@@ -1040,7 +1040,8 @@
   },
   "played": {
     "q1": true,
-    "q2": true
+    "q2": true,
+    "q13": true
   },
   "players": [
     {
