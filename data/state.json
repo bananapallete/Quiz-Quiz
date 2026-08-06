@@ -1040,7 +1040,8 @@
   "played": {
     "q1": true,
     "q5": true,
-    "q2": true
+    "q2": true,
+    "q15": true
   },
   "players": [
     {
@@ -1052,7 +1053,7 @@
     {
       "key": "맥 컴퓨터",
       "nick": "맥 컴퓨터",
-      "score": 5,
+      "score": 10,
       "joinedAt": 1786004940594
     },
     {
