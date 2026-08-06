@@ -121,6 +121,12 @@
       const grid = el('div', 'sc-board');
       S.board.forEach(function (b) {
         const tile = el('div', 'sc-board-tile' + (b.played ? ' played' : ''));
+        if (b.faceImage) {
+          const face = el('img', 'sc-board-face');
+          face.src = b.faceImage;
+          face.alt = '';
+          tile.appendChild(face);
+        }
         tile.appendChild(el('div', 'sc-board-title', (b.index + 1) + '. ' + b.title));
         tile.appendChild(el('div', 'sc-board-heart', '💗 ' + (b.hearts || 0)));
         grid.appendChild(tile);

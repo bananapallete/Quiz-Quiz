@@ -2029,17 +2029,28 @@ body.has-emote-bar .toast-wrap {
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1.5px solid var(--border);
-  padding: 18px 12px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
 }
 .sc-board-tile.played {
   opacity: 0.4;
+}
+/* 큰 화면 보드 타일의 친구 얼굴 */
+.sc-board-face {
+  width: clamp(56px, 6vw, 92px);
+  height: clamp(56px, 6vw, 92px);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 .sc-board-title {
   font-weight: 800;
   font-size: clamp(15px, 1.6vw, 20px);
 }
 .sc-board-heart {
-  margin-top: 8px;
   color: var(--negative);
   font-weight: 800;
   font-size: clamp(14px, 1.5vw, 18px);
