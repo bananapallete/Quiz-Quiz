@@ -2062,6 +2062,14 @@ body.has-emote-bar .toast-wrap {
   gap: 12px;
   flex-wrap: wrap;
 }
+/* 배지 옆 친구 얼굴 아바타 (문제·결과 화면) */
+.sc-top .sc-face {
+  width: clamp(44px, 5vw, 72px);
+  height: clamp(44px, 5vw, 72px);
+  object-fit: contain;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
 .sc-badge {
   font-size: clamp(15px, 1.7vw, 22px);
   padding: 8px 18px;

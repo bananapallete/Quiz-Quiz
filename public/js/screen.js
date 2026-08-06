@@ -89,6 +89,12 @@
   function bigBadges(q, extraLabel) {
     const top = el('div', 'sc-top');
     const n = q.index != null ? q.index + 1 + '. ' : '';
+    if (q.faceImage) {
+      const face = el('img', 'sc-face');
+      face.src = q.faceImage;
+      face.alt = '';
+      top.appendChild(face);
+    }
     top.appendChild(tag(el('span', 'badge sc-badge', n + (q.title || '') + (q.subtitle ? ' · ' + q.subtitle : '')), 'title'));
     top.appendChild(tag(el('span', typeBadgeClass(q.type) + ' sc-badge', TYPE_LABEL[q.type] || ''), 'type'));
     if (q.doublePoints || S.doublePoints) top.appendChild(el('span', 'badge x2 sc-badge', '⭐ 2배 점수'));

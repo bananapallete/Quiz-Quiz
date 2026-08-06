@@ -330,6 +330,7 @@ function publicQuestion(q, round) {
     type: q.type,
     text: q.text,
     image: q.image || '',
+    faceImage: q.cardImage || '', // 친구 얼굴 (큰 화면 배지 옆 아바타용)
     timeLimit: round.timeLimit,
     doublePoints: round.doublePoints,
   };
@@ -507,6 +508,7 @@ function activeRoundPayload(player) {
         type: q.type,
         text: q.text,
         image: q.image || '',
+        faceImage: q.cardImage || '', // 친구 얼굴 (큰 화면 배지 옆 아바타용)
         correctAnswer: correctAnswerText(q),
         explanation: q.explanation || '',
         doublePoints: round.doublePoints,
@@ -846,6 +848,7 @@ function endRound(reason) {
         type: q ? q.type : '',
         text: q ? q.text : '',
         image: q ? q.image || '' : '',
+        faceImage: q ? q.cardImage || '' : '', // 친구 얼굴 (큰 화면 배지 옆 아바타용)
         correctAnswer: q ? correctAnswerText(q) : '',
         explanation: q ? q.explanation || '' : '',
         doublePoints: round.doublePoints,
