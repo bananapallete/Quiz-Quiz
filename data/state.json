@@ -8,19 +8,19 @@
     "screenStyle": {
       "question": {
         "title": {
-          "show": 1,
+          "show": 0,
           "size": 22,
-          "weight": 800
+          "weight": 600
         },
         "type": {
-          "show": 1,
+          "show": 0,
           "size": 22,
-          "weight": 800
+          "weight": 600
         },
         "timer": {
           "show": 1,
           "size": 64,
-          "weight": 800
+          "weight": 600
         },
         "image": {
           "show": 1,
@@ -30,17 +30,17 @@
           "show": 1,
           "size": 40,
           "margin": 12,
-          "weight": 800
+          "weight": 600
         },
         "optnum": {
           "show": 1,
           "size": 20,
-          "weight": 800
+          "weight": 600
         },
         "opt": {
           "show": 1,
           "size": 24,
-          "weight": 800
+          "weight": 600
         },
         "foot": {
           "show": 1,
