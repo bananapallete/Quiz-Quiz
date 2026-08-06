@@ -1321,7 +1321,13 @@ async function boot() {
         console.log('[github-sync] 원격에 저장된 상태가 아직 없습니다. (첫 저장 시 생성됩니다)');
       }
     } catch (e) {
-      console.error('[github-sync] 원격 상태 불러오기 실패 — 로컬 파일로 진행합니다:', e.message);
+      // 원격을 못 읽었는데 자동 저장을 그대로 켜두면, 기본값이 원격의 진짜 데이터를
+      // 덮어써 버릴 수 있다. 안전을 위해 이번 실행에서는 자동 저장을 멈춘다.
+      githubSync.pauseWrites();
+      console.error(
+        '[github-sync] 원격 상태 불러오기 실패 — 데이터 보호를 위해 이번 실행은 자동 저장을 끕니다:',
+        e.message
+      );
     }
   }
   restore();

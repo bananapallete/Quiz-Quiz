@@ -38,10 +38,16 @@ let pendingContent = null; // 다음에 올릴 최신 내용(문자열)
 let lastPushed = null; // 마지막으로 올린 내용 (같으면 건너뛴다)
 let cachedSha = null; // 파일 SHA 캐시 (매번 조회하지 않으려고)
 let branchReady = false; // 상태 브랜치 존재 확인/생성 완료 여부
+let writesPaused = false; // 데이터 보호용: 켜지면 이번 실행 동안 저장을 멈춘다
 let resultCb = null;
 
 function isEnabled() {
   return enabled;
+}
+
+/** 원격을 못 읽은 경우 등, 이번 실행 동안 자동 저장(쓰기)을 멈춘다. */
+function pauseWrites() {
+  writesPaused = true;
 }
 
 /** 동기화 결과(성공/실패)를 받아볼 콜백 */
@@ -55,13 +61,13 @@ function onResult(fn) {
  */
 function load() {
   if (!enabled) return Promise.resolve(null);
-  return request('GET', apiPath() + '?ref=' + encodeURIComponent(BRANCH), null).then(function (res) {
+  // 중요: GitHub contents API(JSON)는 1MB 넘는 파일의 content 를 빈 문자열로 준다.
+  // state.json 은 이미지 때문에 수 MB 이므로, raw 미디어 타입으로 원문을 그대로 받아야 한다.
+  return requestRaw('GET', apiPath() + '?ref=' + encodeURIComponent(BRANCH)).then(function (res) {
     if (res.status === 404) return null; // 브랜치나 파일이 아직 없음
-    if (res.status >= 200 && res.status < 300 && res.body && res.body.content != null) {
-      cachedSha = res.body.sha || cachedSha;
+    if (res.status >= 200 && res.status < 300) {
       branchReady = true;
-      const b64 = String(res.body.content).replace(/\s/g, '');
-      return Buffer.from(b64, 'base64').toString('utf8');
+      return res.text && res.text.length ? res.text : null;
     }
     throw new Error('원격 상태 조회 실패 (HTTP ' + res.status + ')');
   });
@@ -72,7 +78,7 @@ function load() {
  * @param {string} content 파일에 쓸 문자열(JSON)
  */
 function schedule(content) {
-  if (!enabled) return;
+  if (!enabled || writesPaused) return;
   pendingContent = content;
   if (timer || inFlight) return;
   timer = setTimeout(flush, DEBOUNCE_MS);
@@ -185,6 +191,50 @@ function apiPath() {
   return '/repos/' + REPO + '/contents/' + FILE_PATH.split('/').map(encodeURIComponent).join('/');
 }
 
+/**
+ * raw 미디어 타입으로 파일 원문을 그대로 받는다. (1MB 넘는 파일도 OK)
+ * 리다이렉트(302)가 오면 최대 몇 번 따라간다.
+ */
+function requestRaw(method, url, hops) {
+  hops = hops || 0;
+  return new Promise(function (resolve, reject) {
+    let host = 'api.github.com';
+    let path = url;
+    const m = /^https?:\/\/([^/]+)(\/.*)$/.exec(url);
+    if (m) {
+      host = m[1];
+      path = m[2];
+    }
+    const headers = {
+      'User-Agent': 'quizquiz-app',
+      Accept: 'application/vnd.github.raw',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    // GitHub API 호스트에만 토큰을 붙인다(리다이렉트된 CDN에는 붙이지 않음).
+    if (host === 'api.github.com') headers.Authorization = 'Bearer ' + TOKEN;
+    const req = https.request({ method: method, host: host, path: path, headers: headers, timeout: 20000 }, function (res) {
+      // 리다이렉트 추적
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && hops < 4) {
+        res.resume();
+        resolve(requestRaw(method, res.headers.location, hops + 1));
+        return;
+      }
+      let data = '';
+      res.on('data', function (c) {
+        data += c;
+      });
+      res.on('end', function () {
+        resolve({ status: res.statusCode, text: data });
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', function () {
+      req.destroy(new Error('요청 시간 초과'));
+    });
+    req.end();
+  });
+}
+
 function request(method, path, bodyObj) {
   return new Promise(function (resolve, reject) {
     const payload = bodyObj ? Buffer.from(JSON.stringify(bodyObj)) : null;
@@ -233,6 +283,7 @@ module.exports = {
   onResult: onResult,
   schedule: schedule,
   load: load,
+  pauseWrites: pauseWrites,
   // 테스트용
   _apiPath: apiPath,
   _config: { REPO: REPO, BRANCH: BRANCH, FILE_PATH: FILE_PATH, enabled: enabled },
