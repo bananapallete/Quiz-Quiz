@@ -769,7 +769,7 @@
       "title": "성배 A",
       "subtitle": "한의학 관상학",
       "type": "choice",
-      "text": "다음 중 한의사가 아닌 사람은? (진행자: 보기마다 실제 사진을 첨부해 주세요)",
+      "text": "다음 중 한의사가 아닌 사람은?",
       "cardText": "",
       "image": "",
       "timeLimit": 30,
