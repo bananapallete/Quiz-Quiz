@@ -2089,13 +2089,13 @@ body.has-emote-bar .toast-wrap {
   gap: 12px;
   flex-wrap: wrap;
 }
-/* 배지 옆 친구 얼굴 아바타 (문제·결과 화면) */
+/* 배지 옆 친구 얼굴 아바타 (문제·결과 화면) — 작게 */
 .sc-top .sc-face {
-  width: clamp(44px, 5vw, 72px);
-  height: clamp(44px, 5vw, 72px);
+  width: clamp(20px, 2vw, 30px);
+  height: clamp(20px, 2vw, 30px);
   object-fit: contain;
   flex: 0 0 auto;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
 }
 .sc-badge {
   font-size: clamp(15px, 1.7vw, 22px);
@@ -2114,11 +2114,11 @@ body.has-emote-bar .toast-wrap {
 }
 .sc-timer-bar {
   width: 100%;
-  height: 12px;
+  height: 4px;
   border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
-  margin: 10px 0 14px;
+  margin: 4px 0 6px;
 }
 .sc-timer-fill {
   height: 100%;
