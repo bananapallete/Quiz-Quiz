@@ -1045,19 +1045,20 @@
   "played": {
     "q1": true,
     "q7": true,
-    "q4": true
+    "q4": true,
+    "q14": true
   },
   "players": [
     {
       "key": "한정 아이폰",
       "nick": "한정 아이폰",
-      "score": 10,
+      "score": 15,
       "joinedAt": 1786023111081
     },
     {
       "key": "아리아나그런데",
       "nick": "아리아나그런데",
-      "score": 2,
+      "score": 4,
       "joinedAt": 1786023328674
     }
   ]
