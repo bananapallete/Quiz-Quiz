@@ -1112,5 +1112,12 @@
   ],
   "hearts": {},
   "played": {},
-  "players": []
+  "players": [
+    {
+      "key": "한정 아이폰",
+      "nick": "한정 아이폰",
+      "score": 0,
+      "joinedAt": 1786033293357
+    }
+  ]
 }
