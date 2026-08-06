@@ -2373,6 +2373,82 @@ body.has-emote-bar .toast-wrap {
   font-weight: 800;
 }
 
+/* 순위 공개 오버레이 (큰 화면 · 2열로 한눈에) */
+.sc-rank-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 4vw, 56px);
+  background: rgba(5, 10, 26, 0.94);
+  backdrop-filter: blur(6px);
+}
+.sc-rank-box {
+  width: 100%;
+  max-width: 1400px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.sc-rank-heading {
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(32px, 4.5vw, 64px);
+  margin-bottom: clamp(14px, 2vw, 28px);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sc-rank-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(8px, 1vw, 16px) clamp(16px, 2.5vw, 40px);
+  overflow-y: auto;
+  min-height: 0;
+}
+.sc-rank-card {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.4vw, 20px);
+  padding: clamp(8px, 1.1vw, 16px) clamp(14px, 1.8vw, 26px);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+}
+.sc-rank-card.top1 {
+  border-color: var(--gold);
+  background: rgba(255, 200, 60, 0.12);
+}
+.sc-rank-card.top2,
+.sc-rank-card.top3 {
+  border-color: var(--blue-2);
+}
+.sc-rank-medal {
+  flex: 0 0 auto;
+  width: clamp(40px, 3.4vw, 64px);
+  text-align: center;
+  font-weight: 900;
+  font-size: clamp(24px, 2.6vw, 40px);
+}
+.sc-rank-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 800;
+  font-size: clamp(20px, 2.2vw, 36px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-rank-pt {
+  flex: 0 0 auto;
+  font-weight: 900;
+  font-size: clamp(20px, 2.2vw, 36px);
+  color: var(--gold);
+}
+
 /* 공개 애니메이션 화면 */
 .sc-reveal-eyebrow {
   color: var(--text-caption);

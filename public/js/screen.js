@@ -86,6 +86,33 @@
     return node;
   }
 
+  /* ---------------- 순위 공개 오버레이 (현재 화면 위에 2열로) ---------------- */
+  // root 는 매 렌더마다 비워지므로, 순위 오버레이는 body 에 따로 둔다.
+  const rankOverlay = el('div', 'sc-rank-overlay');
+  rankOverlay.style.display = 'none';
+  document.body.appendChild(rankOverlay);
+
+  function showScreenRanking(list) {
+    rankOverlay.innerHTML = '';
+    const box = el('div', 'sc-rank-box');
+    box.appendChild(el('div', 'sc-rank-heading', '🏆 현재 순위'));
+    const grid = el('div', 'sc-rank-grid');
+    (list || []).forEach(function (r) {
+      const row = el('div', 'sc-rank-card' + (r.rank <= 3 ? ' top' + r.rank : ''));
+      const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : String(r.rank);
+      row.appendChild(el('span', 'sc-rank-medal', medal));
+      row.appendChild(el('span', 'sc-rank-name', r.nick));
+      row.appendChild(el('span', 'sc-rank-pt', r.score + '점'));
+      grid.appendChild(row);
+    });
+    box.appendChild(grid);
+    rankOverlay.appendChild(box);
+    rankOverlay.style.display = 'flex';
+  }
+  function hideScreenRanking() {
+    rankOverlay.style.display = 'none';
+  }
+
   function bigBadges(q, extraLabel) {
     const top = el('div', 'sc-top');
     const n = q.index != null ? q.index + 1 + '. ' : '';
@@ -343,6 +370,9 @@
     } else {
       showIdle(d.board);
     }
+    // 순위 공개 중이면 오버레이도 같이 띄운다 (새로 연결된 화면 대응)
+    if (d.rankingVisible && d.ranking) showScreenRanking(d.ranking);
+    else hideScreenRanking();
   });
 
   socket.on('round:reveal', function (d) {
@@ -375,6 +405,12 @@
   });
   socket.on('round:cancel', function () {
     showIdle(S.board);
+  });
+  socket.on('ranking:show', function (d) {
+    showScreenRanking(d && d.ranking);
+  });
+  socket.on('ranking:hide', function () {
+    hideScreenRanking();
   });
   socket.on('board:show', function (d) {
     showIdle(d && d.board);
