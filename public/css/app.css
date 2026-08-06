@@ -873,6 +873,8 @@ h2::before {
   padding: 14px 0 calc(8px + var(--safe-b));
   margin-top: 24px;
   background: linear-gradient(to top, var(--bg) 65%, transparent);
+  /* 퍼즐 연결선(z-index:3)이 제출 버튼을 덮지 않도록 위로 올린다 */
+  z-index: 10;
 }
 
 .waiting {
