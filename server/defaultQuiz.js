@@ -253,4 +253,15 @@ defaultQuestions.forEach((question) => {
   if (key && faces[key]) question.cardImage = faces[key];
 });
 
+// 태중 퍼즐(맥주 시장 점유율)의 브랜드 이미지를 코드에 영구 보존한다.
+// (콘솔에서 넣었다가 소실된 것을 되살리고, 앞으로도 기본값에 포함)
+const beerImages = require('./beerImages');
+const taejung = defaultQuestions.find((q) => q.title === '태중');
+if (taejung && Array.isArray(taejung.pairs)) {
+  taejung.pairs.forEach((p) => {
+    const brand = p.left && p.left.text;
+    if (brand && beerImages[brand]) p.left.image = beerImages[brand];
+  });
+}
+
 module.exports = { defaultQuestions, defaultSettings, practicePuzzle };

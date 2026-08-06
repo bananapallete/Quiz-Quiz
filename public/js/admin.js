@@ -1541,13 +1541,13 @@
         players: '참가자를 전부 삭제할까요? (점수도 사라집니다)',
         questions:
           '16문제를 기본 문제(사진 포함)로 되돌릴까요?\n지금까지 편집한 문제 내용은 사라집니다.',
-        faces: '친구 얼굴만 채울까요?\n지금까지 편집한 문제 내용은 그대로 유지됩니다.',
+        faces: '비어 있는 이미지(친구 얼굴·문제 사진·태중 맥주 등)를 코드에 저장된 것으로 채울까요?\n글자·정답 등 편집한 내용은 그대로 유지됩니다.',
         all: '하트 · 점수 · 참가자 · 출제기록을 모두 초기화할까요?',
       };
       if (!confirm(labels[what] || '진행할까요?')) return;
       socket.emit('admin:reset', { what: what }, function (res) {
         if (res && res.ok) {
-          if (what === 'faces') toast('친구 얼굴 ' + (res.filled || 0) + '개를 채웠어요', 'ok');
+          if (what === 'faces') toast('비어 있던 이미지 ' + (res.filled || 0) + '개를 채웠어요', 'ok');
           else toast('초기화 완료', 'ok');
         } else toast((res && res.error) || '실패', 'err');
       });

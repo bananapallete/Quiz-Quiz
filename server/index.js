@@ -1232,13 +1232,36 @@ io.on('connection', (socket) => {
       io.emit('ranking:hide');
       io.emit('board:show', { board: boardPayload() });
     } else if (what === 'faces') {
-      // 코드 기본값의 친구 얼굴(cardImage)만 채운다. 문제 수정 내용은 그대로 둔다.
+      // 코드 기본값의 이미지(친구 얼굴 + 문제 이미지 + 퍼즐 카드 이미지)를 "비어 있는 곳에만"
+      // 채운다. 글자·보기·정답 등 다른 수정 내용은 그대로 둔다. (비파괴 복구)
       let filled = 0;
       state.questions.forEach((q) => {
         const base = defaultQuestions.find((d) => d.id === q.id) || defaultQuestions[q.index];
-        if (base && base.cardImage && !q.cardImage) {
+        if (!base) return;
+        // 친구 얼굴(카드 이미지)
+        if (base.cardImage && !q.cardImage) {
           q.cardImage = base.cardImage;
           filled += 1;
+        }
+        // 문제 이미지
+        if (base.image && !q.image) {
+          q.image = base.image;
+          filled += 1;
+        }
+        // 퍼즐 카드 이미지 (예: 태중 맥주 이미지) — 순서가 맞을 때만 짝별로 채운다
+        if (Array.isArray(base.pairs) && Array.isArray(q.pairs) && base.pairs.length === q.pairs.length) {
+          base.pairs.forEach((bp, i) => {
+            const lp = q.pairs[i];
+            if (!lp) return;
+            if (bp.left && bp.left.image && lp.left && !lp.left.image) {
+              lp.left.image = bp.left.image;
+              filled += 1;
+            }
+            if (bp.right && bp.right.image && lp.right && !lp.right.image) {
+              lp.right.image = bp.right.image;
+              filled += 1;
+            }
+          });
         }
       });
       io.emit('board:show', { board: boardPayload() });
