@@ -1130,13 +1130,14 @@
     "q10": true,
     "q11": true,
     "q6": true,
-    "q13": true
+    "q13": true,
+    "q16": true
   },
   "players": [
     {
       "key": "한정 아이폰",
       "nick": "한정 아이폰",
-      "score": 35,
+      "score": 40,
       "joinedAt": 1786023111081
     },
     {
