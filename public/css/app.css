@@ -774,6 +774,18 @@ h2::before {
   display: grid;
   gap: 10px;
 }
+/* 복수 정답 안내 */
+.multi-note {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: rgba(90, 130, 255, 0.14);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-align: center;
+}
 .opt {
   display: flex;
   flex-direction: column;

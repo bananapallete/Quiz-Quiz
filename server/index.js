@@ -162,6 +162,8 @@ function normalizeQuestions(list) {
       doublePoints: !!q.doublePoints,
       options: normalizeOptions(q.options),
       answerIndex: clampInt(q.answerIndex, 0, MAX_OPTIONS - 1, 0),
+      answerIndexes: normalizeAnswerIndexes(q.answerIndexes, q.answerIndex),
+      multi: !!q.multi,
       answers: Array.isArray(q.answers) ? q.answers : [],
       pairs: normalizePairs(q.pairs),
       approxMode: q.approxMode === 'date' ? 'date' : 'number',
@@ -181,6 +183,21 @@ const EMOTE_COUNT = 5;
 const MAX_OPTIONS = 8;
 /** 객관식처럼 보기 중 하나를 고르는 유형 (채점 방식이 같다) */
 const CHOICE_LIKE = ['choice', 'audio'];
+
+/** 정답 인덱스 배열을 정리한다: 범위 밖·중복 제거·정렬. 비면 fallback(단일 정답)으로. */
+function normalizeAnswerIndexes(list, answerIndexFallback) {
+  let arr = Array.isArray(list) ? list : [];
+  arr = arr.map((n) => parseInt(n, 10)).filter((n) => Number.isInteger(n) && n >= 0 && n < MAX_OPTIONS);
+  arr = Array.from(new Set(arr)).sort((a, b) => a - b);
+  if (!arr.length) arr = [clampInt(answerIndexFallback, 0, MAX_OPTIONS - 1, 0)];
+  return arr;
+}
+
+/** 이 문제의 정답 보기 인덱스 목록 (복수 정답이면 여러 개). */
+function correctIndexes(q) {
+  if (Array.isArray(q.answerIndexes) && q.answerIndexes.length) return q.answerIndexes;
+  return [Number(q.answerIndex) || 0];
+}
 
 function clampInt(v, min, max, fallback) {
   const n = parseInt(v, 10);
@@ -347,6 +364,8 @@ function publicQuestion(q, round) {
     base.options = q.options
       .map((o, i) => ({ i, text: o.text, image: o.image || '', audio: o.audio || '' }))
       .filter((o) => String(o.text).trim() !== '' || o.audio || o.image);
+    // 복수 정답(여러 개 고르기) 여부만 알려준다. 정답 자체는 채점 전까지 숨긴다.
+    base.multi = !!q.multi;
   } else if (q.type === 'approx') {
     base.approxMode = q.approxMode;
     base.approxUnit = q.approxUnit || '';
@@ -368,9 +387,12 @@ function publicQuestion(q, round) {
 
 function correctAnswerText(q) {
   if (CHOICE_LIKE.includes(q.type)) {
-    const o = q.options[q.answerIndex];
-    const label = (o && o.text) || '';
-    return label || (q.answerIndex + 1) + '번';
+    return correctIndexes(q)
+      .map((idx) => {
+        const o = q.options[idx];
+        return (o && o.text) || idx + 1 + '번';
+      })
+      .join(', ');
   }
   if (q.type === 'short') return (q.answers || []).join(' / ');
   if (q.type === 'puzzle') return q.pairs.map((p) => `${p.left.text} → ${p.right.text}`).join(', ');
@@ -389,9 +411,15 @@ function formatNumber(n) {
 function answerLabel(q, answer) {
   if (!q || answer == null) return '';
   if (CHOICE_LIKE.includes(q.type)) {
-    const o = q.options[Number(answer)];
-    if (!o) return '';
-    return o.text || Number(answer) + 1 + '번';
+    // 복수 정답이면 answer 가 배열
+    const idxs = Array.isArray(answer) ? answer : [answer];
+    const labels = idxs
+      .map((a) => {
+        const o = q.options[Number(a)];
+        return o ? o.text || Number(a) + 1 + '번' : '';
+      })
+      .filter(Boolean);
+    return labels.join(', ');
   }
   if (q.type === 'short') return String(answer).slice(0, 60);
   if (q.type === 'approx') {
@@ -410,14 +438,16 @@ function answerLabel(q, answer) {
  */
 function resultBreakdown(q) {
   if (CHOICE_LIKE.includes(q.type)) {
+    const correct = correctIndexes(q);
     return {
+      multi: !!q.multi,
       options: q.options
         .map((o, i) => ({
           i,
           text: o.text,
           image: o.image || '',
           audio: o.audio || '',
-          correct: i === q.answerIndex,
+          correct: correct.includes(i),
         }))
         .filter((o) => o.text.trim() !== '' || o.audio || o.image),
     };
@@ -589,8 +619,15 @@ function revealQuestion(questionId) {
     if (filled.length < 2) {
       return { ok: false, error: '보기를 2개 이상 입력해 주세요.' };
     }
-    const answer = q.options[q.answerIndex];
-    if (!answer || !(String(answer.text).trim() || answer.audio || answer.image)) {
+    const corrects = correctIndexes(q);
+    if (!corrects.length) {
+      return { ok: false, error: '정답 보기를 최소 1개 지정해 주세요.' };
+    }
+    const allFilled = corrects.every((idx) => {
+      const o = q.options[idx];
+      return o && (String(o.text).trim() || o.audio || o.image);
+    });
+    if (!allFilled) {
       return { ok: false, error: '정답으로 지정한 보기가 비어 있습니다.' };
     }
   }
@@ -724,8 +761,18 @@ function gradeAnswer(q, answer) {
   const base = { correct: false, correctCount: 0, totalCount: 1, distance: null };
 
   if (CHOICE_LIKE.includes(q.type)) {
+    const correct = correctIndexes(q);
+    if (q.multi) {
+      // 복수 정답: 고른 보기 집합이 정답 집합과 "정확히 일치"해야 정답.
+      if (!Array.isArray(answer)) return base;
+      const picked = Array.from(
+        new Set(answer.map((n) => parseInt(n, 10)).filter((n) => Number.isInteger(n)))
+      );
+      const ok = picked.length === correct.length && picked.every((i) => correct.includes(i));
+      return { correct: ok, correctCount: ok ? 1 : 0, totalCount: 1, distance: null };
+    }
     if (answer == null) return base;
-    const ok = Number(answer) === Number(q.answerIndex);
+    const ok = correct.includes(Number(answer));
     return { correct: ok, correctCount: ok ? 1 : 0, totalCount: 1, distance: null };
   }
 
@@ -1096,7 +1143,10 @@ io.on('connection', (socket) => {
     q.explanation = String(incoming.explanation || '').slice(0, 500);
     q.doublePoints = !!incoming.doublePoints;
     q.options = Array.isArray(incoming.options) ? normalizeOptions(incoming.options) : q.options;
-    q.answerIndex = clampInt(incoming.answerIndex, 0, Math.max(0, q.options.length - 1), 0);
+    q.multi = !!incoming.multi;
+    q.answerIndexes = normalizeAnswerIndexes(incoming.answerIndexes, incoming.answerIndex);
+    // 단일 정답 호환: answerIndex 는 정답 목록의 첫 번째로 맞춰 둔다.
+    q.answerIndex = q.answerIndexes[0];
     q.answers = Array.isArray(incoming.answers)
       ? incoming.answers.map((a) => String(a).slice(0, 120)).filter((a) => a.trim() !== '')
       : q.answers;

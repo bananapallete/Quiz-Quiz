@@ -717,7 +717,13 @@
     body.innerHTML = '';
 
     if (question.type === 'choice' || question.type === 'audio') {
-      const list = el('div', 'options');
+      const multi = !!question.multi;
+      if (multi) {
+        S.answer = [];
+        const note = el('div', 'multi-note', '✅ 정답을 여러 개 고를 수 있어요 (해당하는 걸 모두 선택)');
+        body.appendChild(note);
+      }
+      const list = el('div', 'options' + (multi ? ' multi' : ''));
       (question.options || []).forEach(function (opt, order) {
         const b = el('button', 'opt');
         b.type = 'button';
@@ -760,11 +766,24 @@
 
         b.addEventListener('click', function () {
           if (S.submitted) return;
-          S.answer = opt.i;
-          Array.prototype.forEach.call(list.children, function (c) {
-            c.classList.remove('selected');
-          });
-          b.classList.add('selected');
+          if (multi) {
+            // 여러 개 선택: 누를 때마다 켜고 끈다.
+            if (!Array.isArray(S.answer)) S.answer = [];
+            const at = S.answer.indexOf(opt.i);
+            if (at === -1) {
+              S.answer.push(opt.i);
+              b.classList.add('selected');
+            } else {
+              S.answer.splice(at, 1);
+              b.classList.remove('selected');
+            }
+          } else {
+            S.answer = opt.i;
+            Array.prototype.forEach.call(list.children, function (c) {
+              c.classList.remove('selected');
+            });
+            b.classList.add('selected');
+          }
           vibrate(10);
         });
         list.appendChild(b);
@@ -875,9 +894,12 @@
     const t = S.question.type;
     const answer = currentAnswer();
     if (!auto) {
-      if ((t === 'choice' || t === 'audio') && answer == null) {
-        toast('보기를 선택해 주세요.', 'err');
-        return;
+      if (t === 'choice' || t === 'audio') {
+        const empty = S.question.multi ? !(Array.isArray(answer) && answer.length) : answer == null;
+        if (empty) {
+          toast(S.question.multi ? '정답을 하나 이상 선택해 주세요.' : '보기를 선택해 주세요.', 'err');
+          return;
+        }
       }
       if (t === 'short' && !String(answer || '').trim()) {
         toast('정답을 입력해 주세요.', 'err');

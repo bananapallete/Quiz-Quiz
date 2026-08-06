@@ -415,7 +415,16 @@
   }
 
   function answerText(q) {
-    if (q.type === 'choice') return (q.options[q.answerIndex] && q.options[q.answerIndex].text) || '(미설정)';
+    if (q.type === 'choice' || q.type === 'audio') {
+      const idxs =
+        Array.isArray(q.answerIndexes) && q.answerIndexes.length ? q.answerIndexes : [Number(q.answerIndex) || 0];
+      const txt = idxs
+        .map(function (i) {
+          return (q.options[i] && q.options[i].text) || i + 1 + '번';
+        })
+        .join(', ');
+      return txt || '(미설정)';
+    }
     if (q.type === 'short') return (q.answers || []).join(' / ') || '(미설정)';
     if (q.type === 'puzzle')
       return q.pairs
@@ -617,9 +626,30 @@
     const MIN_OPTIONS = 2;
     const choiceBox = el('div');
     choiceBox.dataset.sec = 'choice';
-    const optLabel = el('label', null, '보기 (라디오를 눌러 정답 지정)');
+
+    // 단일/복수 정답 모드 (여러 보기를 정답으로 지정할 수 있다)
+    const ansMode = { multi: !!q.multi };
+
+    const multiToggle = el('label', 'multi-toggle');
+    multiToggle.style.cssText =
+      'display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin-bottom:8px;cursor:pointer';
+    const multiChk = el('input');
+    multiChk.type = 'checkbox';
+    multiChk.dataset.f = 'f-multi';
+    multiChk.checked = ansMode.multi;
+    multiToggle.appendChild(multiChk);
+    multiToggle.appendChild(el('span', null, '✅ 복수 정답 (여러 개를 정답으로 지정)'));
+    choiceBox.appendChild(multiToggle);
+
+    const optLabel = el('label', null, '');
     optLabel.style.cssText = 'display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px';
     choiceBox.appendChild(optLabel);
+    function updateOptLabel() {
+      optLabel.textContent = ansMode.multi
+        ? '보기 (정답인 것을 모두 체크하세요)'
+        : '보기 (라디오를 눌러 정답 지정)';
+    }
+    updateOptLabel();
 
     const optList = el('div');
     choiceBox.appendChild(optList);
@@ -645,7 +675,7 @@
 
       const line = el('div', 'opt-edit');
       const radio = el('input');
-      radio.type = 'radio';
+      radio.type = ansMode.multi ? 'checkbox' : 'radio';
       radio.name = 'ans-' + q.id;
       radio.dataset.f = 'f-answerIndex';
       radio.title = '이 보기를 정답으로';
@@ -664,8 +694,8 @@
         const wasChecked = radio.checked;
         optList.removeChild(optWrap);
         renumberOptions();
-        // 정답으로 지정돼 있던 보기를 지우면 첫 번째 보기를 정답으로 되돌린다.
-        if (wasChecked) {
+        // 단일 정답인데 정답 보기를 지웠으면 첫 번째 보기를 정답으로 되돌린다.
+        if (wasChecked && !ansMode.multi && !optList.querySelector('[data-f="f-answerIndex"]:checked')) {
           const first = optList.querySelector('[data-f="f-answerIndex"]');
           if (first) first.checked = true;
         }
@@ -706,12 +736,43 @@
       optList.appendChild(buildOptionRow(opt));
     });
     renumberOptions();
-    const initialRadio = optList.querySelectorAll('[data-f="f-answerIndex"]')[Number(q.answerIndex) || 0];
-    if (initialRadio) initialRadio.checked = true;
-    else {
-      const first = optList.querySelector('[data-f="f-answerIndex"]');
-      if (first) first.checked = true;
+
+    // 정답 지정 상태를 채운다 (복수 정답이면 여러 개).
+    const initCorrect =
+      Array.isArray(q.answerIndexes) && q.answerIndexes.length ? q.answerIndexes : [Number(q.answerIndex) || 0];
+    const ansInputs = optList.querySelectorAll('[data-f="f-answerIndex"]');
+    let anyChecked = false;
+    initCorrect.forEach(function (idx) {
+      if (ansInputs[idx]) {
+        ansInputs[idx].checked = true;
+        anyChecked = true;
+      }
+    });
+    if (!anyChecked && ansInputs[0]) ansInputs[0].checked = true;
+
+    // 단일 ↔ 복수 전환: 정답 입력들의 타입(radio/checkbox)을 바꾼다.
+    function applyMultiMode() {
+      const inputs = optList.querySelectorAll('[data-f="f-answerIndex"]');
+      const checkedIdx = [];
+      Array.prototype.forEach.call(inputs, function (inp, i) {
+        if (inp.checked) checkedIdx.push(i);
+      });
+      Array.prototype.forEach.call(inputs, function (inp) {
+        inp.type = ansMode.multi ? 'checkbox' : 'radio';
+      });
+      // 복수 → 단일로 바꾸면 정답이 하나만 남도록 첫 번째만 유지.
+      if (!ansMode.multi) {
+        const keep = checkedIdx.length ? checkedIdx[0] : 0;
+        Array.prototype.forEach.call(inputs, function (inp, i) {
+          inp.checked = i === keep;
+        });
+      }
+      updateOptLabel();
     }
+    multiChk.addEventListener('change', function () {
+      ansMode.multi = multiChk.checked;
+      applyMultiMode();
+    });
 
     body.appendChild(choiceBox);
 
@@ -997,8 +1058,10 @@
 
   function previewChoice(body, q) {
     const list = el('div', 'options');
+    const correctSet =
+      Array.isArray(q.answerIndexes) && q.answerIndexes.length ? q.answerIndexes : [Number(q.answerIndex) || 0];
     (q.options || []).forEach(function (opt, i) {
-      const b = el('button', 'opt' + (q.answerIndex === i ? ' selected' : ''));
+      const b = el('button', 'opt' + (correctSet.indexOf(i) !== -1 ? ' selected' : ''));
       b.type = 'button';
       b.disabled = true;
       if (opt.image) {
@@ -1431,7 +1494,13 @@
     const options = optionTexts.map(function (text, i) {
       return { text: text, image: optionImages[i] || '', audio: optionAudios[i] || '' };
     });
-    const checkedRadio = body.querySelector('[data-f="f-answerIndex"]:checked');
+    // 정답 지정: 체크된 보기 인덱스들을 모은다 (복수 정답 지원).
+    const answerInputs = body.querySelectorAll('[data-f="f-answerIndex"]');
+    const answerIndexes = [];
+    Array.prototype.forEach.call(answerInputs, function (inp, i) {
+      if (inp.checked) answerIndexes.push(i);
+    });
+    const multiChecked = body.querySelector('[data-f="f-multi"]');
     const lefts = body.querySelectorAll('[data-f="f-pair-left"]');
     const rights = body.querySelectorAll('[data-f="f-pair-right"]');
     const leftImgs = body.querySelectorAll('[data-f="f-pair-left-image"]');
@@ -1457,7 +1526,9 @@
       explanation: val('f-explanation'),
       doublePoints: !!body.querySelector('[data-f="f-doublePoints"]').checked,
       options: options,
-      answerIndex: checkedRadio ? Number(checkedRadio.value) : 0,
+      multi: !!(multiChecked && multiChecked.checked),
+      answerIndexes: answerIndexes,
+      answerIndex: answerIndexes.length ? answerIndexes[0] : 0,
       answers: val('f-answers')
         .split(',')
         .map(function (s) {
