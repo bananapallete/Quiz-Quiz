@@ -1039,12 +1039,7 @@
     "q14": 8,
     "q15": 13
   },
-  "played": {
-    "q16": true,
-    "q3": true,
-    "q10": true,
-    "q7": true
-  },
+  "played": {},
   "players": [
     {
       "key": "맥 컴퓨터",
