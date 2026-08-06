@@ -43,6 +43,20 @@
     });
   })();
 
+  /**
+   * 데이터 URL 오디오의 비표준 MIME 을 브라우저가 아는 표준 타입으로 고친다.
+   * (아이폰 등에서 녹음한 m4a 는 'audio/x-m4a' 로 붙는데, 이 MIME 은 브라우저가
+   *  재생을 거부한다. 실제 코덱은 AAC(mp4)이므로 'audio/mp4' 로 바꿔주면 재생된다.)
+   */
+  function fixAudioMime(src) {
+    if (typeof src !== 'string') return src;
+    return src
+      .replace(/^data:audio\/x-m4a/i, 'data:audio/mp4')
+      .replace(/^data:audio\/m4a/i, 'data:audio/mp4')
+      .replace(/^data:audio\/x-mp3/i, 'data:audio/mpeg')
+      .replace(/^data:audio\/x-wav/i, 'data:audio/wav');
+  }
+
   /** 재생 중인 보기 음성을 모두 멈춘다. */
   function stopAllAudio() {
     S.audios.forEach(function (a) {
@@ -720,7 +734,7 @@
 
         // 음성이 붙어 있으면 재생 버튼을 넣는다. 재생 버튼을 눌러도 보기가 선택되지는 않는다.
         if (opt.audio) {
-          const audio = new Audio(opt.audio);
+          const audio = new Audio(fixAudioMime(opt.audio));
           audio.preload = 'none';
           const playBtn = el('span', 'opt-play', '▶︎ 듣기');
           playBtn.addEventListener('click', function (e) {
@@ -942,7 +956,7 @@
         item.appendChild(el('span', 'tx', o.text));
         // 음성 보기는 결과 화면에서도 다시 들어볼 수 있게
         if (o.audio) {
-          const audio = new Audio(o.audio);
+          const audio = new Audio(fixAudioMime(o.audio));
           audio.preload = 'none';
           const play = el('span', 'opt-play', '▶︎');
           play.addEventListener('click', function (e) {

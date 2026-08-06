@@ -218,8 +218,15 @@ function clampImage(v) {
 
 function clampAudio(v) {
   if (typeof v !== 'string') return '';
-  const s = v.trim();
+  let s = v.trim();
   if (!s || s.length > MAX_AUDIO_CHARS) return '';
+  // 아이폰 녹음 등 비표준 오디오 MIME(audio/x-m4a)은 브라우저가 재생을 거부한다.
+  // 실제 코덱은 AAC(mp4)이므로 표준 MIME 으로 바꿔 저장한다.
+  s = s
+    .replace(/^data:audio\/x-m4a/i, 'data:audio/mp4')
+    .replace(/^data:audio\/m4a/i, 'data:audio/mp4')
+    .replace(/^data:audio\/x-mp3/i, 'data:audio/mpeg')
+    .replace(/^data:audio\/x-wav/i, 'data:audio/wav');
   return s;
 }
 
