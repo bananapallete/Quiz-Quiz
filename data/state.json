@@ -673,7 +673,7 @@
       "subtitle": "뮤지컬 퀴즈",
       "type": "choice",
       "text": "세계 4대 뮤지컬이 아닌 것은?",
-      "cardText": "",
+      "cardText": "뮤지컬",
       "image": "",
       "timeLimit": 30,
       "hint": "",
@@ -714,7 +714,8 @@
       "approxUnit": "",
       "approxDate": "",
       "approxDateStart": "",
-      "approxDateEnd": ""
+      "approxDateEnd": "",
+      "cardImage": ""
     },
     {
       "id": "q12",
