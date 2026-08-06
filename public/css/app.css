@@ -2026,34 +2026,48 @@ body.has-emote-bar .toast-wrap {
   gap: 14px;
 }
 .sc-board-tile {
+  position: relative;
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1.5px solid var(--border);
-  padding: 16px 12px;
+  padding: 12px 14px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
-  text-align: center;
+  gap: 12px;
+  min-height: clamp(72px, 9vw, 120px);
 }
 .sc-board-tile.played {
   opacity: 0.4;
 }
-/* 큰 화면 보드 타일의 친구 얼굴 */
+/* 큰 화면 보드 타일의 친구 얼굴 — 왼쪽에 가장 크게 */
 .sc-board-face {
-  width: clamp(56px, 6vw, 92px);
-  height: clamp(56px, 6vw, 92px);
+  width: clamp(64px, 8vw, 116px);
+  height: clamp(64px, 8vw, 116px);
   object-fit: contain;
+  flex: 0 0 auto;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 .sc-board-title {
   font-weight: 800;
-  font-size: clamp(15px, 1.6vw, 20px);
+  font-size: clamp(15px, 1.7vw, 22px);
+  text-align: left;
+  line-height: 1.2;
+  word-break: keep-all;
 }
+/* 얼굴이 없는 칸은 이름을 가운데로 */
+.sc-board-tile.no-face .sc-board-title {
+  text-align: center;
+  width: 100%;
+}
+/* 하트 수는 우측 상단 */
 .sc-board-heart {
+  position: absolute;
+  top: 8px;
+  right: 12px;
   color: var(--negative);
   font-weight: 800;
-  font-size: clamp(14px, 1.5vw, 18px);
+  font-size: clamp(13px, 1.4vw, 18px);
 }
 
 /* 문제 / 결과 공통 레이아웃 */

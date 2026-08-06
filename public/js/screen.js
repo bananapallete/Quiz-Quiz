@@ -120,15 +120,18 @@
     if (S.board && S.board.length) {
       const grid = el('div', 'sc-board');
       S.board.forEach(function (b) {
-        const tile = el('div', 'sc-board-tile' + (b.played ? ' played' : ''));
+        const tile = el('div', 'sc-board-tile' + (b.played ? ' played' : '') + (b.faceImage ? '' : ' no-face'));
+        // 하트 수는 우측 상단
+        tile.appendChild(el('div', 'sc-board-heart', '💗 ' + (b.hearts || 0)));
+        // 얼굴은 왼쪽에 크게
         if (b.faceImage) {
           const face = el('img', 'sc-board-face');
           face.src = b.faceImage;
           face.alt = '';
           tile.appendChild(face);
         }
-        tile.appendChild(el('div', 'sc-board-title', (b.index + 1) + '. ' + b.title));
-        tile.appendChild(el('div', 'sc-board-heart', '💗 ' + (b.hearts || 0)));
+        // 이름 (숫자 없이)
+        tile.appendChild(el('div', 'sc-board-title', b.title));
         grid.appendChild(tile);
       });
       c.appendChild(grid);
