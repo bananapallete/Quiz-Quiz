@@ -157,6 +157,8 @@ function normalizeQuestions(list) {
       image: clampImage(q.image),
       cardImage: clampImage(q.cardImage),
       answerImage: clampImage(q.answerImage), // 정답 공개 화면에서만 보여줄 이미지
+      // 정답 화면에 이미지를 보여줄지 여부 (문제별로 따로 저장). 기본값 true.
+      showAnswerImage: q.showAnswerImage !== false,
       timeLimit: clampInt(q.timeLimit, 5, 600, 30),
       hint: q.hint || '',
       explanation: String(q.explanation || '').slice(0, 500),
@@ -545,8 +547,8 @@ function activeRoundPayload(player) {
         subtitle: q.subtitle,
         type: q.type,
         text: q.text,
-        // 정답 화면에서는 정답 이미지가 있으면 그걸, 없으면 문제 이미지를 보여준다.
-        image: q.answerImage || q.image || '',
+        // 정답 화면 이미지: 표시가 켜져 있을 때만, 정답 이미지(없으면 문제 이미지)를 보여준다.
+        image: q.showAnswerImage !== false ? q.answerImage || q.image || '' : '',
         faceImage: q.cardImage || '', // 친구 얼굴 (큰 화면 배지 옆 아바타용)
         correctAnswer: correctAnswerText(q),
         explanation: q.explanation || '',
@@ -903,8 +905,8 @@ function endRound(reason) {
         subtitle: q ? q.subtitle : '',
         type: q ? q.type : '',
         text: q ? q.text : '',
-        // 정답 화면: 정답 이미지가 있으면 그걸, 없으면 문제 이미지를 보여준다.
-        image: q ? q.answerImage || q.image || '' : '',
+        // 정답 화면 이미지: 표시가 켜져 있을 때만, 정답 이미지(없으면 문제 이미지)를 보여준다.
+        image: q && q.showAnswerImage !== false ? q.answerImage || q.image || '' : '',
         faceImage: q ? q.cardImage || '' : '', // 친구 얼굴 (큰 화면 배지 옆 아바타용)
         correctAnswer: q ? correctAnswerText(q) : '',
         explanation: q ? q.explanation || '' : '',
@@ -1142,6 +1144,7 @@ io.on('connection', (socket) => {
     q.image = clampImage(incoming.image);
     q.cardImage = clampImage(incoming.cardImage);
     q.answerImage = clampImage(incoming.answerImage);
+    q.showAnswerImage = incoming.showAnswerImage !== false;
     q.timeLimit = clampInt(incoming.timeLimit, 5, 600, q.timeLimit);
     q.hint = String(incoming.hint || '').slice(0, 300);
     q.explanation = String(incoming.explanation || '').slice(0, 500);

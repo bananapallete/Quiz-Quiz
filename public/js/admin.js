@@ -629,6 +629,19 @@
       )
     );
 
+    // 이 문제의 정답 화면에 이미지를 보여줄지 여부 (문제별로 따로 저장)
+    const showAnsWrap = el('label');
+    showAnsWrap.style.cssText =
+      'display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:12px;cursor:pointer';
+    const showAnsChk = el('input');
+    showAnsChk.type = 'checkbox';
+    showAnsChk.dataset.f = 'f-showAnswerImage';
+    showAnsChk.checked = q.showAnswerImage !== false;
+    showAnsChk.style.cssText = 'width:20px;height:20px;accent-color:var(--accent)';
+    showAnsWrap.appendChild(showAnsChk);
+    showAnsWrap.appendChild(el('span', null, '🖼️ 정답 화면에 이미지 표시 (끄면 이 문제 정답 화면엔 이미지 안 보임)'));
+    body.appendChild(showAnsWrap);
+
     // 객관식 / 음성 — 보기 개수를 자유롭게 추가·삭제할 수 있다.
     const MAX_OPTIONS = 8;
     const MIN_OPTIONS = 2;
@@ -1530,6 +1543,10 @@
       image: val('f-image'),
       cardImage: val('f-cardImage'),
       answerImage: val('f-answerImage'),
+      showAnswerImage: !!(
+        body.querySelector('[data-f="f-showAnswerImage"]') &&
+        body.querySelector('[data-f="f-showAnswerImage"]').checked
+      ),
       timeLimit: parseInt(val('f-timeLimit'), 10) || q.timeLimit,
       hint: val('f-hint'),
       explanation: val('f-explanation'),
