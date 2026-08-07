@@ -19,16 +19,16 @@
         },
         "timer": {
           "show": 1,
-          "size": 64,
+          "size": 37,
           "weight": 600
         },
         "image": {
           "show": 1,
-          "maxH": 56
+          "maxH": 73
         },
         "qtext": {
           "show": 1,
-          "size": 40,
+          "size": 23,
           "margin": 12,
           "weight": 600
         },
@@ -39,12 +39,12 @@
         },
         "opt": {
           "show": 1,
-          "size": 24,
+          "size": 21,
           "weight": 600
         },
         "foot": {
           "show": 1,
-          "size": 22,
+          "size": 17,
           "weight": 600
         }
       },
