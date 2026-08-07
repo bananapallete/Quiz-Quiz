@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>퀴즈퀴즈 🎉</title>
-    <link rel="stylesheet" href="/css/app.css?v=50" />
+    <link rel="stylesheet" href="/css/app.css?v=51" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>"
@@ -138,10 +138,12 @@
         <div class="rank-list" id="r-list"></div>
       </div>
 
-      <button id="r-to-board" class="btn ghost full" style="margin-top: 20px">
-        🔙 문제 보드로 돌아가기
+      <button id="r-to-board" class="btn full" style="margin-top: 20px">
+        ✕ 닫고 보드로 돌아가기
       </button>
-      <p class="tiny muted center" style="margin: 12px 0 0">진행자가 다음 문제를 준비하고 있어요…</p>
+      <p class="tiny muted center" style="margin: 12px 0 0">
+        다 확인했으면 <b>닫기</b>를 눌러 보드로 돌아가세요. 진행자가 다음 문제를 준비하고 있어요…
+      </p>
     </section>
 
     <!-- 5. 퍼즐 연습 -->
@@ -205,7 +207,7 @@
     <div class="toast-wrap" id="toasts"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/common.js?v=50"></script>
-    <script src="/js/player.js?v=50"></script>
+    <script src="/js/common.js?v=51"></script>
+    <script src="/js/player.js?v=51"></script>
   </body>
 </html>
