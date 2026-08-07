@@ -1143,20 +1143,7 @@
     }
   ],
   "hearts": {},
-  "played": {
-    "q16": true,
-    "q15": true,
-    "q14": true,
-    "q13": true,
-    "q2": true,
-    "q5": true,
-    "q1": true,
-    "q3": true,
-    "q4": true,
-    "q7": true,
-    "q9": true,
-    "q8": true
-  },
+  "played": {},
   "players": [
     {
       "key": "한정 아이폰",
