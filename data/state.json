@@ -1144,7 +1144,8 @@
   ],
   "hearts": {},
   "played": {
-    "q1": true
+    "q1": true,
+    "q6": true
   },
   "players": [
     {
