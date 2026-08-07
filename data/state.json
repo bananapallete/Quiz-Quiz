@@ -50,9 +50,9 @@
       },
       "reveal": {
         "eyebrow": {
-          "show": 1,
+          "show": 0,
           "size": 28,
-          "weight": 800
+          "weight": 600
         },
         "media": {
           "show": 1,
@@ -60,20 +60,20 @@
         },
         "sub": {
           "show": 1,
-          "size": 28,
+          "size": 22,
           "weight": 600
         },
         "title": {
           "show": 1,
-          "size": 72,
+          "size": 29,
           "margin": 10,
-          "weight": 800
+          "weight": 600
         },
         "text": {
           "show": 1,
-          "size": 32,
+          "size": 23,
           "margin": 14,
-          "weight": 600
+          "weight": 200
         }
       },
       "result": {
