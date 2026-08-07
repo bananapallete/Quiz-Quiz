@@ -286,7 +286,7 @@
     wrap.appendChild(colL);
     wrap.appendChild(colR);
     body.appendChild(wrap);
-    if (showArrow) body.appendChild(el('p', 'sc-answer-hint', '왼쪽 사진과 오른쪽 답이 정답 짝이에요'));
+    if (showArrow) body.appendChild(el('p', 'sc-answer-hint', '위 사진과 바로 아래 답이 정답 짝이에요'));
   }
 
   function scCard(item) {

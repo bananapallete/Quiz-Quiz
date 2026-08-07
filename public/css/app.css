@@ -2257,17 +2257,18 @@ body.has-emote-bar .toast-wrap {
 }
 
 /* 큰 화면 퍼즐 */
+/* 큰 화면 퍼즐: 위(사진 줄) · 아래(정답 줄) 2행으로 펼쳐 한눈에 보이게 */
 .sc-puzzle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 40px;
-  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vw, 18px);
   width: 100%;
 }
 .sc-pz-col {
   display: grid;
-  grid-auto-rows: 1fr;
-  gap: 12px;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: clamp(8px, 1vw, 16px);
   min-width: 0;
 }
 .sc-pcard {
@@ -2275,20 +2276,21 @@ body.has-emote-bar .toast-wrap {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px;
+  gap: 6px;
+  padding: clamp(8px, 1vw, 14px);
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1.5px solid var(--border);
   text-align: center;
   font-weight: 800;
-  font-size: clamp(16px, 1.8vw, 24px);
+  font-size: clamp(14px, 1.5vw, 22px);
   word-break: keep-all;
   overflow-wrap: anywhere;
+  min-width: 0;
 }
 .sc-pcard-img {
   max-width: 100%;
-  max-height: 22vh;
+  max-height: clamp(90px, 26vh, 300px);
   width: auto;
   height: auto;
   object-fit: contain;
