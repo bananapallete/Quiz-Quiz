@@ -621,6 +621,14 @@
       field('카드 사진 (출제할 때 뒤집히는 카드에 보여요)', buildImageField('f-cardImage', q.cardImage))
     );
 
+    // 정답 공개 화면에서만 보여줄 이미지. 비워두면 위의 문제 이미지를 그대로 쓴다.
+    body.appendChild(
+      field(
+        '정답 이미지 (정답 공개 화면에서만 보여요 · 비우면 문제 이미지 사용)',
+        buildImageField('f-answerImage', q.answerImage)
+      )
+    );
+
     // 객관식 / 음성 — 보기 개수를 자유롭게 추가·삭제할 수 있다.
     const MAX_OPTIONS = 8;
     const MIN_OPTIONS = 2;
@@ -1521,6 +1529,7 @@
       cardText: val('f-cardText'),
       image: val('f-image'),
       cardImage: val('f-cardImage'),
+      answerImage: val('f-answerImage'),
       timeLimit: parseInt(val('f-timeLimit'), 10) || q.timeLimit,
       hint: val('f-hint'),
       explanation: val('f-explanation'),
