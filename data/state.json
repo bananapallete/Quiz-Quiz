@@ -1111,7 +1111,9 @@
     }
   ],
   "hearts": {},
-  "played": {},
+  "played": {
+    "q16": true
+  },
   "players": [
     {
       "key": "한정 아이폰",
