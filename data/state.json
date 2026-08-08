@@ -1144,12 +1144,5 @@
   ],
   "hearts": {},
   "played": {},
-  "players": [
-    {
-      "key": "한정 테스트",
-      "nick": "한정 테스트",
-      "score": 0,
-      "joinedAt": 1786177475496
-    }
-  ]
+  "players": []
 }
