@@ -1174,7 +1174,8 @@
     "q13": true,
     "q16": true,
     "q7": true,
-    "q8": true
+    "q8": true,
+    "q12": true
   },
   "players": [
     {
@@ -1240,7 +1241,7 @@
     {
       "key": "남갱",
       "nick": "남갱",
-      "score": 6,
+      "score": 11,
       "joinedAt": 1786188358172
     },
     {
