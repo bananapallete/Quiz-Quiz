@@ -1178,7 +1178,8 @@
     "q12": true,
     "q14": true,
     "q9": true,
-    "q1": true
+    "q1": true,
+    "q3": true
   },
   "players": [
     {
@@ -1190,13 +1191,13 @@
     {
       "key": "꺼누",
       "nick": "꺼누",
-      "score": 11,
+      "score": 13,
       "joinedAt": 1786188040121
     },
     {
       "key": "섹시가이",
       "nick": "섹시가이",
-      "score": 13,
+      "score": 18,
       "joinedAt": 1786188046203
     },
     {
