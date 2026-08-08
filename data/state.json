@@ -1142,19 +1142,8 @@
       "approxDateEnd": ""
     }
   ],
-  "hearts": {
-    "q12": 100,
-    "q2": 9,
-    "q7": 9,
-    "q8": 6,
-    "q6": 145
-  },
-  "played": {
-    "q9": true,
-    "q2": true,
-    "q4": true,
-    "q5": true
-  },
+  "hearts": {},
+  "played": {},
   "players": [
     {
       "key": "한정 테스트",
