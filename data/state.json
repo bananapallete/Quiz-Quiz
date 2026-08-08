@@ -1144,5 +1144,12 @@
   ],
   "hearts": {},
   "played": {},
-  "players": []
+  "players": [
+    {
+      "key": "영선",
+      "nick": "영선",
+      "score": 0,
+      "joinedAt": 1786182676822
+    }
+  ]
 }
