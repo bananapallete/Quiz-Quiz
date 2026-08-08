@@ -1171,31 +1171,32 @@
     "q4": true,
     "q5": true,
     "q15": true,
-    "q13": true
+    "q13": true,
+    "q16": true
   },
   "players": [
     {
       "key": "영선",
       "nick": "영선",
-      "score": 2,
+      "score": 3,
       "joinedAt": 1786182676822
     },
     {
       "key": "꺼누",
       "nick": "꺼누",
-      "score": 7,
+      "score": 8,
       "joinedAt": 1786188040121
     },
     {
       "key": "섹시가이",
       "nick": "섹시가이",
-      "score": 5,
+      "score": 7,
       "joinedAt": 1786188046203
     },
     {
       "key": "정우",
       "nick": "정우",
-      "score": 5,
+      "score": 6,
       "joinedAt": 1786188049039
     },
     {
@@ -1207,43 +1208,43 @@
     {
       "key": "천호동사탄",
       "nick": "천호동사탄",
-      "score": 9,
+      "score": 11,
       "joinedAt": 1786188066634
     },
     {
       "key": "댕보",
       "nick": "댕보",
-      "score": 11,
+      "score": 13,
       "joinedAt": 1786188077419
     },
     {
       "key": "다니쨩",
       "nick": "다니쨩",
-      "score": 4,
+      "score": 9,
       "joinedAt": 1786188086769
     },
     {
       "key": "카프카",
       "nick": "카프카",
-      "score": 5,
+      "score": 6,
       "joinedAt": 1786188103130
     },
     {
       "key": "세종성녀",
       "nick": "세종성녀",
-      "score": 11,
+      "score": 12,
       "joinedAt": 1786188132163
     },
     {
       "key": "남갱",
       "nick": "남갱",
-      "score": 5,
+      "score": 6,
       "joinedAt": 1786188358172
     },
     {
       "key": "은아리영",
       "nick": "은아리영",
-      "score": 4,
+      "score": 5,
       "joinedAt": 1786188378215
     }
   ]
