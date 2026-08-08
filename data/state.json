@@ -1142,7 +1142,9 @@
       "approxDateEnd": ""
     }
   ],
-  "hearts": {},
+  "hearts": {
+    "q12": 1
+  },
   "played": {},
   "players": [
     {
@@ -1156,6 +1158,12 @@
       "nick": "영선",
       "score": 0,
       "joinedAt": 1786176209032
+    },
+    {
+      "key": "꺼누",
+      "nick": "꺼누",
+      "score": 0,
+      "joinedAt": 1786176218979
     }
   ]
 }
