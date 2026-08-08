@@ -1147,7 +1147,11 @@
       "approxDateEnd": ""
     }
   ],
-  "hearts": {},
+  "hearts": {
+    "q12": 2,
+    "q7": 3,
+    "q6": 2
+  },
   "played": {},
   "players": [
     {
