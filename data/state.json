@@ -1177,7 +1177,8 @@
     "q8": true,
     "q12": true,
     "q14": true,
-    "q9": true
+    "q9": true,
+    "q1": true
   },
   "players": [
     {
@@ -1189,7 +1190,7 @@
     {
       "key": "꺼누",
       "nick": "꺼누",
-      "score": 9,
+      "score": 11,
       "joinedAt": 1786188040121
     },
     {
@@ -1231,7 +1232,7 @@
     {
       "key": "카프카",
       "nick": "카프카",
-      "score": 12,
+      "score": 17,
       "joinedAt": 1786188103130
     },
     {
