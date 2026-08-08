@@ -2375,6 +2375,23 @@ body.has-emote-bar .toast-wrap {
   font-weight: 800;
 }
 
+/* 큰 화면 효과음 잠금 해제 버튼 */
+.sc-sfx-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 300;
+  padding: 12px 18px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: var(--gradient-primary);
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
 /* 순위 공개 오버레이 (큰 화면 · 2열로 한눈에) */
 .sc-rank-overlay {
   position: fixed;

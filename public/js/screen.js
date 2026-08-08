@@ -335,6 +335,45 @@
     return { choice: '⚡', audio: '🔊', short: '✏️', puzzle: '🧩', approx: '🎯' }[t] || '🎯';
   }
 
+  /* ---------------- 정답 공개 효과음 ---------------- */
+  // 시간이 끝나거나 정답이 공개될 때(=round:end) 큰 화면에서 이 소리를 낸다.
+  // 브라우저 자동재생 정책 때문에, 처음 한 번은 "소리 켜기"를 눌러 잠금을 풀어야 한다.
+  const revealSfx = new Audio('/sfx/reveal.m4a?v=1');
+  revealSfx.preload = 'auto';
+  let sfxReady = false;
+  const sfxBtn = el('button', 'sc-sfx-btn', '🔊 소리 켜기');
+  document.body.appendChild(sfxBtn);
+  function hideSfxBtn() {
+    sfxBtn.style.display = 'none';
+  }
+  function unlockSfx() {
+    if (sfxReady) return;
+    revealSfx
+      .play()
+      .then(function () {
+        revealSfx.pause();
+        revealSfx.currentTime = 0;
+        sfxReady = true;
+        hideSfxBtn();
+      })
+      .catch(function () {
+        /* 아직 사용자 제스처가 없어 잠김 — 버튼을 계속 보여준다 */
+      });
+  }
+  function playRevealSfx() {
+    try {
+      revealSfx.currentTime = 0;
+      revealSfx.play().catch(function () {});
+    } catch (e) {
+      /* 무시 */
+    }
+  }
+  sfxBtn.addEventListener('click', unlockSfx);
+  // 화면 아무 곳이나 한 번 눌러도 잠금이 풀리게 한다.
+  ['click', 'keydown', 'touchstart'].forEach(function (ev) {
+    window.addEventListener(ev, unlockSfx);
+  });
+
   /* ---------------- 소켓 ---------------- */
 
   // 참가자들이 보낸 반응 스티커를 좌·우 가장자리에 랜덤하게 띄운다.
@@ -402,6 +441,7 @@
   });
   socket.on('round:end', function (d) {
     showResult(d);
+    playRevealSfx(); // 시간 종료·정답 공개 효과음
   });
   socket.on('round:cancel', function () {
     showIdle(S.board);
