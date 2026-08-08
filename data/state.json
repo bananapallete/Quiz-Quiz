@@ -1170,7 +1170,8 @@
     "q11": true,
     "q4": true,
     "q5": true,
-    "q15": true
+    "q15": true,
+    "q13": true
   },
   "players": [
     {
@@ -1188,7 +1189,7 @@
     {
       "key": "섹시가이",
       "nick": "섹시가이",
-      "score": 4,
+      "score": 5,
       "joinedAt": 1786188046203
     },
     {
@@ -1200,19 +1201,19 @@
     {
       "key": "똥꼬",
       "nick": "똥꼬",
-      "score": 7,
+      "score": 9,
       "joinedAt": 1786188063565
     },
     {
       "key": "천호동사탄",
       "nick": "천호동사탄",
-      "score": 7,
+      "score": 9,
       "joinedAt": 1786188066634
     },
     {
       "key": "댕보",
       "nick": "댕보",
-      "score": 6,
+      "score": 11,
       "joinedAt": 1786188077419
     },
     {
@@ -1224,13 +1225,13 @@
     {
       "key": "카프카",
       "nick": "카프카",
-      "score": 4,
+      "score": 5,
       "joinedAt": 1786188103130
     },
     {
       "key": "세종성녀",
       "nick": "세종성녀",
-      "score": 9,
+      "score": 11,
       "joinedAt": 1786188132163
     },
     {
