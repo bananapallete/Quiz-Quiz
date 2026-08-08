@@ -1176,13 +1176,14 @@
     "q7": true,
     "q8": true,
     "q12": true,
-    "q14": true
+    "q14": true,
+    "q9": true
   },
   "players": [
     {
       "key": "영선",
       "nick": "영선",
-      "score": 5,
+      "score": 7,
       "joinedAt": 1786182676822
     },
     {
@@ -1200,19 +1201,19 @@
     {
       "key": "정우",
       "nick": "정우",
-      "score": 7,
+      "score": 8,
       "joinedAt": 1786188049039
     },
     {
       "key": "똥꼬",
       "nick": "똥꼬",
-      "score": 11,
+      "score": 12,
       "joinedAt": 1786188063565
     },
     {
       "key": "천호동사탄",
       "nick": "천호동사탄",
-      "score": 12,
+      "score": 14,
       "joinedAt": 1786188066634
     },
     {
@@ -1230,19 +1231,19 @@
     {
       "key": "카프카",
       "nick": "카프카",
-      "score": 7,
+      "score": 12,
       "joinedAt": 1786188103130
     },
     {
       "key": "세종성녀",
       "nick": "세종성녀",
-      "score": 16,
+      "score": 18,
       "joinedAt": 1786188132163
     },
     {
       "key": "남갱",
       "nick": "남갱",
-      "score": 11,
+      "score": 12,
       "joinedAt": 1786188358172
     },
     {
