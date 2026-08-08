@@ -1173,13 +1173,14 @@
     "q15": true,
     "q13": true,
     "q16": true,
-    "q7": true
+    "q7": true,
+    "q8": true
   },
   "players": [
     {
       "key": "영선",
       "nick": "영선",
-      "score": 3,
+      "score": 5,
       "joinedAt": 1786182676822
     },
     {
@@ -1191,7 +1192,7 @@
     {
       "key": "섹시가이",
       "nick": "섹시가이",
-      "score": 8,
+      "score": 13,
       "joinedAt": 1786188046203
     },
     {
@@ -1233,7 +1234,7 @@
     {
       "key": "세종성녀",
       "nick": "세종성녀",
-      "score": 14,
+      "score": 16,
       "joinedAt": 1786188132163
     },
     {
