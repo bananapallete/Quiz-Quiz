@@ -1165,12 +1165,14 @@
     "q13": 21,
     "q8": 79
   },
-  "played": {},
+  "played": {
+    "q10": true
+  },
   "players": [
     {
       "key": "영선",
       "nick": "영선",
-      "score": 0,
+      "score": 5,
       "joinedAt": 1786182676822
     },
     {
@@ -1224,19 +1226,19 @@
     {
       "key": "세종성녀",
       "nick": "세종성녀",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1786188132163
     },
     {
       "key": "남갱",
       "nick": "남갱",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1786188358172
     },
     {
       "key": "은아리영",
       "nick": "은아리영",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1786188378215
     }
   ]
