@@ -1166,7 +1166,8 @@
     "q8": 79
   },
   "played": {
-    "q10": true
+    "q10": true,
+    "q11": true
   },
   "players": [
     {
@@ -1190,19 +1191,19 @@
     {
       "key": "정우",
       "nick": "정우",
-      "score": 0,
+      "score": 1,
       "joinedAt": 1786188049039
     },
     {
       "key": "똥꼬",
       "nick": "똥꼬",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1786188063565
     },
     {
       "key": "천호동사탄",
       "nick": "천호동사탄",
-      "score": 0,
+      "score": 5,
       "joinedAt": 1786188066634
     },
     {
@@ -1214,7 +1215,7 @@
     {
       "key": "다니쨩",
       "nick": "다니쨩",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1786188086769
     },
     {
@@ -1226,13 +1227,13 @@
     {
       "key": "세종성녀",
       "nick": "세종성녀",
-      "score": 0,
+      "score": 1,
       "joinedAt": 1786188132163
     },
     {
       "key": "남갱",
       "nick": "남갱",
-      "score": 0,
+      "score": 2,
       "joinedAt": 1786188358172
     },
     {
