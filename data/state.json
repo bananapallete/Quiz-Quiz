@@ -1167,7 +1167,8 @@
   },
   "played": {
     "q1": true,
-    "q15": true
+    "q15": true,
+    "q7": true
   },
   "players": [
     {
