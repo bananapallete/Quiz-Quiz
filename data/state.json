@@ -1169,7 +1169,8 @@
     "q1": true,
     "q15": true,
     "q7": true,
-    "q9": true
+    "q9": true,
+    "q10": true
   },
   "players": [
     {
@@ -1253,7 +1254,7 @@
     {
       "key": "맥 컴퓨터",
       "nick": "맥 컴퓨터",
-      "score": 10,
+      "score": 15,
       "joinedAt": 1786326391763
     }
   ]
