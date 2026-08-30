@@ -1167,7 +1167,8 @@
   },
   "played": {
     "q13": true,
-    "q15": true
+    "q15": true,
+    "q1": true
   },
   "players": [
     {
@@ -1263,7 +1264,7 @@
     {
       "key": "다하",
       "nick": "다하",
-      "score": 5,
+      "score": 10,
       "joinedAt": 1788068449053
     }
   ]
