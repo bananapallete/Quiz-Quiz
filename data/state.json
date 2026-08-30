@@ -1165,15 +1165,7 @@
     "q13": 152,
     "q8": 1349
   },
-  "played": {
-    "q1": true,
-    "q15": true,
-    "q7": true,
-    "q9": true,
-    "q10": true,
-    "q11": true,
-    "q13": true
-  },
+  "played": {},
   "players": [
     {
       "key": "영선",
